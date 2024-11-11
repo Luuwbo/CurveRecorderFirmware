@@ -61,6 +61,7 @@ int main(void)
 	InitIO();
 	InitCPU();
 	
+	
 	TimerInit();
 	i2c_init();
 	
