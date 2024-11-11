@@ -5,8 +5,8 @@
  * Author : Uwe
  */ 
  
- #define CPU_SPEED 16000000
- #define F_CPU 16000000UL
+ #define CPU_SPEED 32000000
+ #define F_CPU 32000000UL
 
  #include <avr/io.h>
  #include <avr/wdt.h>
