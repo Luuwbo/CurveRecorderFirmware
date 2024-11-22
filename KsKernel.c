@@ -18,7 +18,6 @@
 #include "Com_Debug.h"
 
 
-
 void KsK_SetRegUDmV(int32_t i32_Ud)
 {
 	int64_t i64_v1;

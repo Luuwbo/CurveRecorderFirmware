@@ -30,9 +30,9 @@ void Com_Debug_SendCharFromBuffer (void)
 	cli();
 	if (SerOutBufLow != SerOutBufHigh)
 		{
-		if ((UCSR0A & (1<<UDRE0)) != 0)
+		if ((USARTF0_STATUS & (1<<USART_DREIF_bp)) != 0)
 		{
-			UDR0 = SerOutBuf[SerOutBufLow];
+			USARTF0_DATA = SerOutBuf[SerOutBufLow];
 			++SerOutBufLow;
 			if (SerOutBufLow >= SerOutBufMax)
 			{
@@ -68,6 +68,7 @@ void Com_Debug_AddStringToBuffer (char *s)
 	}
 }
 void Com_Debug_AddIntToBuffer(uint32_t zahl, uint8_t form)
+// form :: 
 {
 	char s[33];
 	ltoa(zahl,s,form);
