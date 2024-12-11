@@ -67,6 +67,7 @@ void Com_Debug_AddStringToBuffer (char *s)
 		s++;
 	}
 }
+
 void Com_Debug_AddIntToBuffer(uint32_t zahl, uint8_t form)
 // form :: 
 {

@@ -67,6 +67,7 @@ uint8_t ui8_RSRange;					// eingestellter RG [1,2,3,4}
 
 uint8_t ui8_PulsCycle;				// zum auslösen eines Pulses auf 1 setzten
 uint8_t ui8_StatCycle;
+uint8_t ADC_data[20];
 
 //void KsK_SetUD();
 //void KsK_SetRegUDmV(int32_t i32_UD);

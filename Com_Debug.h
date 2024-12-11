@@ -9,7 +9,7 @@
 #ifndef Com_Debug_H_
 #define Com_Debug_H_
 
-#define SerOutBufMax 50
+#define SerOutBufMax 200
 #define SerInBufMax 30
 
 char SerOutBuf[SerOutBufMax+1];

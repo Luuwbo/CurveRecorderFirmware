@@ -22,6 +22,7 @@
 // #include "i2cmaster.h"
  #include "Com_Debug.h"
  #include "KennLinienSchreiber.h"
+ #include "ADS131.h"
 // #include "Befehlsinterpreter.h"
  
  /* Prototypen */
@@ -55,13 +56,13 @@ uint8_t ui8_PulsCycle;				//Statusvariable für Pulsausgabe
 
 int32_t DACvalTest;
 uint8_t av;
+uint8_t chan = 0;
 
 
 int main(void)
 {
 	InitIO();
 	InitCPU();
-	
 	
 	TimerInit();
 //	i2c_init();
@@ -74,7 +75,17 @@ int main(void)
 //	SetLTC1655Output(1,32768);
 //	SetLTC1655Output(2,32768);
 
-Com_Debug_AddStringToBuffer("Start");
+	Com_Debug_AddStringToBuffer("Start");
+
+	ADS131_INIT();
+	ADS131_ChanSet(0,0);
+	ADS131_ChanSet(1,1);
+	ADS131_ChanSet(2,1);
+	ADS131_ChanSet(3,1);
+	ADS131_ChanSet(4,1);
+	ADS131_ChanSet(5,1);
+	ADS131_ChanSet(6,1);
+	ADS131_ChanSet(7,1);
 
     while (1) 
     {
@@ -113,12 +124,35 @@ void Loop1000ms(void)
 }
 void Loop100ms (void)
 {	
-
+	//uint8_t i;
+	//for (i=0;i<12;i++)
+	//{
+		//Com_Debug_AddIntToBuffer(ADS131_ReadRegister(i),2);
+		//Com_Debug_AddStringToBuffer("-");	
+	//}
+	//Com_Debug_AddCharToBuffer(13);
 }
 void Loop10ms (void)
 {
+	uint8_t i;
+	int16_t erg;
 //	KsK_SetRelais();
+
+	
+	ADS131_READDATA();
+	Com_Debug_AddIntToBuffer(ADC_data[0],2);
+	Com_Debug_AddIntToBuffer(ADC_data[1],2);
+	Com_Debug_AddIntToBuffer(ADC_data[2],2);
+	Com_Debug_AddStringToBuffer(";");
+	for (i=3;i<19;i+=2)
+	{
+		erg = ADC_data[i]*256+ADC_data[i+1];	
+		Com_Debug_AddIntToBuffer(erg,10);
+		Com_Debug_AddStringToBuffer(";");
+	}
+	Com_Debug_AddCharToBuffer(13);
 }
+
 void Loopxms()
 {
 //	KsK_PulseMeas();
@@ -126,9 +160,9 @@ void Loopxms()
 }
 void Loop1ms (void)
 {
-	Com_Debug_AddIntToBuffer(SystemTime100u,10);
-	Com_Debug_AddCharToBuffer(13);
-	
+	//Com_Debug_AddIntToBuffer(SystemTime100u,10);
+	//Com_Debug_AddCharToBuffer(13);
+
 //	BefInt();
 }
 
@@ -173,8 +207,11 @@ void InitCPU (void)
 	USARTF0_CTRLA |= (0b10<<USART_TXCINTLVL0_bp);						/* Transmit Interrupt enable */
 	USARTF0_CTRLB = (1<<USART_RXEN_bp)|(1<<USART_TXEN_bp);				/* Enable receiver and transmitter */	
 	
-// ------ SPI initialisieren ---------------------------------------------------------------------------------------
+// ------ SPIs initialisieren ---------------------------------------------------------------------------------------
 	//SPCR = (1<<SPE) | (1<<MSTR) | (1<<SPR0)| (1<<SPR1);		/* SPE=1 DORD=0 MSTR=1 CPOL=0 CPHA=0 SPR1=1 SPR0=1 */
+	//SPI for ADC
+	PORTC_DIRSET = 0b10110000;		// MOSI & SCLK & SS as Output
+	SPIC_CTRL = 0b01010100;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 01 prescaler 1/4
 	
 	
 // ------ Interrupt System init -------------------------------------------------------------------------------------
@@ -195,16 +232,13 @@ void TimerInit (void)
 
 void InitIO (void)
 {
-	PORTB_OUT = 0b00010000;   												/* activate all pull-ups */
-	PORTB_DIR = 0b11101111;       											/* all pins input */
-	PORTC_OUT = 0b11000000;   												/* AD ports Tristate setzen */
-	PORTC_DIR = 0b00111111;       											/* all pins */
-	PORTD_OUT = 0b00000011;  												/* PD2 - PD7 für Relais GateModul*/
-	PORTD_DIR = 0b11111100;
-//	SPCR = 0b01010001;						/* SPE=1 DORD=0 MSTR=1 CPOL=0 CPHA=0 SPR1=0 SPR0=1 */
+	PORTB_OUT = 0b00000000;   												/* activate all pull-ups */
+	PORTB_DIR = 0b00000000;       											/* all pins input */
+	PORTC_OUT = 0b00000000;   												/* AD ports Tristate setzen */
+	PORTC_DIR = 0b00000000;       											/* all pins */
+	PORTD_OUT = 0b00000000;  												/* PD2 - PD7 für Relais GateModul*/
+	PORTD_DIR = 0b00000000;
 
-	PORTB_OUTSET = (1 << 1);					/* CS auf 1 */
-	PORTB_OUTSET|= (1 << 2);					/* CS auf 1 */
 }
 
 ISR (TCF0_OVF_vect)													//Timer 1 compare handler wird F_Interupt / sec aufgerufen
@@ -240,3 +274,7 @@ ISR(USARTF0_TXC_vect)														//Transmit Ready interrupt
 		}
 	}
 }
+
+ISR(SPIC_INT_vect)
+{}
+	
