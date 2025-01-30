@@ -22,8 +22,6 @@
 #define MPC4725_Adr_GND 0b11000000			//Adresse für ADDR = GND
 #define MPC4725_Adr_VDD 0b11000010			//Adresse für ADDR = VDD
 #define MPC4725_DAC_Reg 0b01000000			//command
-// void SetMCP4725Output(int8_t Chan, uint32_t DACval);
-// void SetLTC1655Output(int8_t Chan, uint32_t DACval);
 
 // Modul KAL
 //void Kal_UD();
@@ -31,13 +29,22 @@
 
 
 // HW Leiterplatte
-#define c_UDDACchan 1			//DAC KAnal für UD
-#define c_UGDACchan 2			//DAC KAnal für UG
+#define c_UDDACchan 0			//DAC Kanal für UD soll
+#define c_UGDACchan 1			//DAC Kanal für UG soll
+#define c_UG2DACchen 2			//DAC KANAL für UG2 soll
+#define c_TempDACchan 3			//DAC KANAL für DUT Temperatur soll
 
-#define c_UDADCchan 2
-#define c_UGADCchan 1
-#define c_UGvADCchan 4
-#define c_USADCchan 5
+#define c_UDADCchan 0			//ADC Kanal für UD ist
+#define c_UGADCchan 1			//ADC Kanal für UG ist
+#define c_UGvADCchan 2
+#define c_UG2ADCchan 3			//ADC Kanal für UG2 ist
+#define c_UG2vADCchan 4
+#define c_USADCchan 5			//ADC Kanal für US ist
+#define c_USDutADCchan 6		//ADC Kanal für USDUT ist (Innenwiderstand Relais etc)
+#define c_TempDutADCchan 7
+
+
+
 
 #define c_i32_UDR0MaxAbs_mV 25227		//maximale Ausgangsspannung von UD bei Relais aus
 #define c_i32_UDR1MaxAbs_mV	2500		//maximale Ausgangsspannung von UD bei Relais ein
@@ -69,13 +76,13 @@ uint8_t ui8_PulsCycle;				// zum auslösen eines Pulses auf 1 setzten
 uint8_t ui8_StatCycle;
 uint8_t ADC_data[20];
 
-//void KsK_SetUD();
-//void KsK_SetRegUDmV(int32_t i32_UD);
+void KsK_SetUD();
+void KsK_SetRegUDmV(int32_t i32_UD);
 //void KsK_SetUDtoZero();
 //void KsK_SetUG();
-//void KsK_SetRegUGmV(int32_t i32_UD);
+void KsK_SetRegUGmV(int32_t i32_UD);
 //void KsK_SetUGtoZero();
-//void KsK_PulseMeas();
+void KsK_PulseMeas();
 //void KsK_StatMeas();
 //void KsK_SetRelais();
 

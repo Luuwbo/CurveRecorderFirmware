@@ -156,16 +156,37 @@
     <Compile Include="ADS131.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="BefehlsInterpreter.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Befehlsinterpreter.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Com_Debug.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Com_Debug.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="DAC8554.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="DAC8554.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="KennLinienSchreiber.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="KsKernel.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Modules.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Modules.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

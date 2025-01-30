@@ -13,6 +13,10 @@
 
  #include "Befehlsinterpreter.h"
  
+ // !Dxxxxx -> UD [mV] setzen / string 6 byte /
+ // !Gxxxxx -> UG [mV] setzen / string 6 byte / 
+ // !P -> messimpuls auslösen
+ 
  void BefInt ()
  {
 	static char aa;
@@ -78,7 +82,7 @@
 						break;
 					}
 
-					case 71:	// Befehl "G" für GateSpannung 
+					case 71:	// Befehl "G" für GateSpannung G1
 					{
 						AtrChars = 6;
 						atrcnt++;
@@ -377,7 +381,91 @@
 						bf=0;
 						break;
 					}
-
+					
+					case 122:	// Befehl "z" für alle Daten en Block zum PC senden
+					{
+						Com_Debug_AddCharToBuffer(122);			//sende z
+						Com_Debug_AddCharToBuffer(100);			// d für UD Anfang
+						Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
+						Com_Debug_AddCharToBuffer(68);			// D für UD Ende
+						Com_Debug_AddCharToBuffer(103);			// UG
+						Com_Debug_AddIntToBuffer(i32_UG,10);
+						Com_Debug_AddCharToBuffer(71);
+						Com_Debug_AddCharToBuffer(118);			// UGv
+						Com_Debug_AddIntToBuffer(i32_UGv,10);
+						Com_Debug_AddCharToBuffer(86);
+						Com_Debug_AddCharToBuffer(115);			// Us
+						Com_Debug_AddIntToBuffer(i32_US,10);
+						Com_Debug_AddCharToBuffer(83);
+						Com_Debug_AddCharToBuffer(114);			// Rs
+						switch (ui8_RSRange)
+						{
+							case 1:
+							{
+								Com_Debug_AddIntToBuffer(10,10);
+								break;
+							}
+							case 2:
+							{
+								Com_Debug_AddIntToBuffer(100,10);
+								break;
+							}
+							case 3:
+							{
+								Com_Debug_AddIntToBuffer(1000,10);
+								break;
+							}
+							case 4:
+							{
+								Com_Debug_AddIntToBuffer(10000,10);
+								break;
+							}
+							default:
+							{
+								Com_Debug_AddIntToBuffer(10,10);
+							}
+						}
+						Com_Debug_AddCharToBuffer(82);
+						Com_Debug_AddCharToBuffer(98);
+						switch (ui8_RGRange)
+						{
+							case 0:
+							{
+								Com_Debug_AddIntToBuffer(1000000,10);
+								break;
+							}
+							case 1:
+							{
+								Com_Debug_AddIntToBuffer(99099,10);
+								break;
+							}
+							case 2:
+							{
+								Com_Debug_AddIntToBuffer(9901,10);
+								break;
+							}
+							case 3:
+							{
+								Com_Debug_AddIntToBuffer(999,10);
+								break;
+							}
+							case 4:
+							{
+								Com_Debug_AddIntToBuffer(100,10);
+								break;
+							}
+							default:
+							{
+								Com_Debug_AddIntToBuffer(1000000,10);
+							}
+						}
+						Com_Debug_AddCharToBuffer(66);
+						Com_Debug_AddCharToBuffer(10);					// LineFeed
+						Com_Debug_AddCharToBuffer(13);					// LineFeed
+						aa=0;
+						bf=0;
+						break;
+					}
 					default:	aa=0;bf=0;break;
 				}			
 			}

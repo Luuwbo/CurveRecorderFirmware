@@ -13,9 +13,14 @@
 #include <avr/interrupt.h>
 #include <math.h>
 #include <string.h>
+#define F_CPU 32000000UL
+#include <util/delay.h>
+
 
 #include "KennLinienSchreiber.h"
 #include "Com_Debug.h"
+#include "ADS131.h"
+#include "DAC8554.h"
 
 
 void KsK_SetRegUDmV(int32_t i32_Ud)
@@ -34,13 +39,11 @@ void KsK_SetRegUDmV(int32_t i32_Ud)
 }
 void KsK_SetUD()
 {
-	//SetMCP4725Output(c_UDDACchan,i32_UDOutReg>>4);
-	SetLTC1655Output(c_UDDACchan,i32_UDOutReg);
+	DAC8554_SetChan(c_UDDACchan,i32_UDOutReg);
 }
 void KsK_SetUDtoZero()
 {
-	//SetMCP4725Output(c_UDDACchan,2048 + i16_UDKalVal);
-	SetLTC1655Output(c_UDDACchan,32768);
+	DAC8554_SetChan(c_UDDACchan,32768);
 }
 
 //-------------------------------------------------------------------------------------
@@ -60,41 +63,35 @@ void KsK_SetRegUGmV(int32_t i32_UG)
 }
 void KsK_SetUG()
 {
-	//SetMCP4725Output(c_UGDACchan,i32_UGOutReg>>4);
-	SetLTC1655Output(c_UGDACchan,i32_UGOutReg);
-
+	DAC8554_PreSetChan(c_UGDACchan,i32_UGOutReg);
 }
 void KsK_SetUGtoZero()
 {
-	//SetMCP4725Output(c_UGDACchan,2048 + i16_UGKalVal);
-	SetLTC1655Output(c_UGDACchan,32768);
+	DAC8554_PreSetChan(c_UGDACchan,32768);
 }
 //-------------------------------------------------------------------------------------
 void KsK_PulseMeas()
 {
 	switch (ui8_PulsCycle){
-		case 1: KsK_SetUD();
+		case 1: KsK_SetUD();		
 				KsK_SetUG();
+				_delay_us(2);
+				DAC8554_LoadDataHW();			// über HW-Leitung LDAC alle DAC Kanäle setzen
 				ui8_PulsCycle += 1;
 				break;
-
-		case 2: ADS1115StartConversion(c_UDADCchan);
-				ADS1115StartConversion(c_USADCchan);
-				ui8_PulsCycle += 1;
+				
+		case 2: ui8_PulsCycle += 1;
 				break;
-
-		case 3: i32_UD = ADS1115GetDiffVal(c_UDADCchan);
-				i32_US = ADS1115GetDiffVal(c_USADCchan);
-				ADS1115StartConversion(c_UGADCchan);
-				ADS1115StartConversion(c_UGvADCchan);
-				ui8_PulsCycle += 1;
-				break;
-	
-		case 4:	i32_UG = ADS1115GetDiffVal(c_UGADCchan);
-				i32_UGv = ADS1115GetDiffVal(c_UGvADCchan);
+				
+		case 3: ADS131_READDATA();
+				i32_UD = ((ADC_data[3+(c_UDADCchan<<1)])<<8) + ADC_data[3+(c_UDADCchan<<1)+1];
+				i32_UG = ((ADC_data[3+(c_UGADCchan<<1)])<<8) + ADC_data[3+(c_UGADCchan<<1)+1];
+				i32_UGv = ((ADC_data[3+(c_UGvADCchan<<1)])<<8) + ADC_data[3+(c_UGvADCchan<<1)+1];
+				i32_US = ((ADC_data[3+(c_USADCchan<<1)])<<8) + ADC_data[3+(c_USADCchan<<1)+1];
 				KsK_SetUDtoZero();
 				KsK_SetUGtoZero();
-				ui8_PulsCycle += 1;
+				ui8_PulsCycle = 0;
+				_delay_ms(1);
 				Com_Debug_AddCharToBuffer(80);					// "P" Pulsmessung fertig melden
 				Com_Debug_AddCharToBuffer(10);					// LineFeed
 				Com_Debug_AddCharToBuffer(13);					// LineFeed
@@ -104,156 +101,157 @@ void KsK_PulseMeas()
 	}
 }
 
+
+#if CCRV == 1	
 void KsK_StatMeas()
 {
 	switch (ui8_StatCycle){
 		case 1: KsK_SetUD();
-				KsK_SetUG();
-				ADS1115StartConversion(c_UDADCchan);
-				ADS1115StartConversion(c_USADCchan);
-				ui8_StatCycle += 1;
-				break;
+		KsK_SetUG();
+		ADS1115StartConversion(c_UDADCchan);
+		ADS1115StartConversion(c_USADCchan);
+		ui8_StatCycle += 1;
+		break;
 		
 		case 2: i32_UD = ADS1115GetDiffVal(c_UDADCchan);
-				i32_US = ADS1115GetDiffVal(c_USADCchan);
-				ADS1115StartConversion(c_UGADCchan);
-				ADS1115StartConversion(c_UGvADCchan);
-				ui8_StatCycle += 1;
-				break;
+		i32_US = ADS1115GetDiffVal(c_USADCchan);
+		ADS1115StartConversion(c_UGADCchan);
+		ADS1115StartConversion(c_UGvADCchan);
+		ui8_StatCycle += 1;
+		break;
 		
 		case 3:	ADS1115StartConversion(c_UGADCchan);
-				ADS1115StartConversion(c_UGvADCchan);
-				ui8_StatCycle += 1;
-				break;
+		ADS1115StartConversion(c_UGvADCchan);
+		ui8_StatCycle += 1;
+		break;
 		
 		case 4:	i32_UG = ADS1115GetDiffVal(c_UGADCchan);
-				i32_UGv = ADS1115GetDiffVal(c_UGvADCchan);
-				ui8_StatCycle += 1;
-				break;
+		i32_UGv = ADS1115GetDiffVal(c_UGvADCchan);
+		ui8_StatCycle += 1;
+		break;
 		
 		default: ui8_StatCycle = 0;  break;
 	}
 }
 
 void KsK_SetRelais() {
-// UGV Relais setzen (UGV5 an PD6)
-	if (ui8_UGvVoltageRange == 1)
-	{
-		PORTD |= (1 << PD6);
-	}
-	else
-	{
-		PORTD &= ~(1 << PD6);
-	}
-
-// UG Messeingang Empfindlichkeit (UGV6 an PD7)
-	if (ui8_UGMeasInputRange == 1)
-	{
-		PORTD |= (1 << PD7);
-	}
-	else
-	{
-		PORTD &= ~(1 << PD7);
-	}
-
-// UD Relais setzen (UD Relais an PB0)
-	if (ui8_UDVoltageRange == 1)		// Spannung < 2V
-	{
-		PORTB |= (1 << PB0);
-	}
-	else
-	{
-		PORTB &= ~(1 << PB0);
-	}
-
-// RG Umschalten (UGV1 bis UG4 an PD2 bis PD5)
-
-	switch(ui8_RGRange)
-	{
-		case 1:
-		{
-			PORTD &= ~(1 << PD2);
-			PORTD &= ~(1 << PD3);
-			PORTD &= ~(1 << PD4);
-			PORTD |= (1 << PD5);
-			break;
-		}
-		case 2:
-		{
-			PORTD &= ~(1 << PD2);
-			PORTD &= ~(1 << PD3);
-			PORTD &= ~(1 << PD5);
-			PORTD |= (1 << PD4);
-			break;
-		}
-		case 3:
-		{
-			PORTD &= ~(1 << PD2);
-			PORTD &= ~(1 << PD4);
-			PORTD &= ~(1 << PD5);
-			PORTD |= (1 << PD3);
-			break;
-		}
-		case 4:
-		{
-			PORTD |= (1 << PD2);
-			PORTD &= ~(1 << PD3);
-			PORTD &= ~(1 << PD4);
-			PORTD &= ~(1 << PD5);
-			break;
-		}
-		default:
-		{
-			PORTD &= ~(1 << PD2);
-			PORTD &= ~(1 << PD3);
-			PORTD &= ~(1 << PD4);
-			PORTD &= ~(1 << PD5);
-			break;
-		}
-	}
-	switch(ui8_RSRange)
-	{
-		case 1:
-		{
-			PORTC |= (1 << PC0);
-			PORTC &= ~(1 << PC1);
-			PORTC &= ~(1 << PC2);
-			PORTC &= ~(1 << PC3);
-			break;
-		}
-		case 2:
-		{
-			PORTC &= ~(1 << PC0);
-			PORTC &= ~(1 << PC2);
-			PORTC &= ~(1 << PC3);
-			PORTC |= (1 << PC1);
-			break;
-		}
-		case 3:
-		{
-			PORTC &= ~(1 << PC0);
-			PORTC &= ~(1 << PC1);
-			PORTC &= ~(1 << PC3);
-			PORTC |= (1 << PC2);
-			break;
-		}
-		case 4:
-		{
-			PORTC &= ~(1 << PC0);
-			PORTC &= ~(1 << PC1);
-			PORTC &= ~(1 << PC2);
-			PORTC |= (1 << PC3);
-			break;
-		}
-		default:
-		{
-			PORTC &= ~(1 << PC0);
-			PORTC &= ~(1 << PC1);
-			PORTC &= ~(1 << PC2);
-			PORTC &= ~(1 << PC3);
-			break;
-		}
-	}
+//// UGV Relais setzen (UGV5 an PD6)
+	//if (ui8_UGvVoltageRange == 1)
+	//{
+		//PORTD |= (1 << PD6);
+	//}
+	//else
+	//{
+		//PORTD &= ~(1 << PD6);
+	//}
+//
+//// UG Messeingang Empfindlichkeit (UGV6 an PD7)
+	//if (ui8_UGMeasInputRange == 1)
+	//{
+		//PORTD |= (1 << PD7);
+	//}
+	//else
+	//{
+		//PORTD &= ~(1 << PD7);
+	//}
+//
+//// UD Relais setzen (UD Relais an PB0)
+	//if (ui8_UDVoltageRange == 1)		// Spannung < 2V
+	//{
+		//PORTB |= (1 << PB0);
+	//}
+	//else
+	//{
+		//PORTB &= ~(1 << PB0);
+	//}
+//
+//// RG Umschalten (UGV1 bis UG4 an PD2 bis PD5)
+//
+	//switch(ui8_RGRange)
+	//{
+		//case 1:
+		//{
+			//PORTD &= ~(1 << PD2);
+			//PORTD &= ~(1 << PD3);
+			//PORTD &= ~(1 << PD4);
+			//PORTD |= (1 << PD5);
+			//break;
+		//}
+		//case 2:
+		//{
+			//PORTD &= ~(1 << PD2);
+			//PORTD &= ~(1 << PD3);
+			//PORTD &= ~(1 << PD5);
+			//PORTD |= (1 << PD4);
+			//break;
+		//}
+		//case 3:
+		//{
+			//PORTD &= ~(1 << PD2);
+			//PORTD &= ~(1 << PD4);
+			//PORTD &= ~(1 << PD5);
+			//PORTD |= (1 << PD3);
+			//break;
+		//}
+		//case 4:
+		//{
+			//PORTD |= (1 << PD2);
+			//PORTD &= ~(1 << PD3);
+			//PORTD &= ~(1 << PD4);
+			//PORTD &= ~(1 << PD5);
+			//break;
+		//}
+		//default:
+		//{
+			//PORTD &= ~(1 << PD2);
+			//PORTD &= ~(1 << PD3);
+			//PORTD &= ~(1 << PD4);
+			//PORTD &= ~(1 << PD5);
+			//break;
+		//}
+	//}
+	//switch(ui8_RSRange)
+	//{
+		//case 1:
+		//{
+			//PORTC |= (1 << PC0);
+			//PORTC &= ~(1 << PC1);
+			//PORTC &= ~(1 << PC2);
+			//PORTC &= ~(1 << PC3);
+			//break;
+		//}
+		//case 2:
+		//{
+			//PORTC &= ~(1 << PC0);
+			//PORTC &= ~(1 << PC2);
+			//PORTC &= ~(1 << PC3);
+			//PORTC |= (1 << PC1);
+			//break;
+		//}
+		//case 3:
+		//{
+			//PORTC &= ~(1 << PC0);
+			//PORTC &= ~(1 << PC1);
+			//PORTC &= ~(1 << PC3);
+			//PORTC |= (1 << PC2);
+			//break;
+		//}
+		//case 4:
+		//{
+			//PORTC &= ~(1 << PC0);
+			//PORTC &= ~(1 << PC1);
+			//PORTC &= ~(1 << PC2);
+			//PORTC |= (1 << PC3);
+			//break;
+		//}
+		//default:
+		//{
+			//PORTC &= ~(1 << PC0);
+			//PORTC &= ~(1 << PC1);
+			//PORTC &= ~(1 << PC2);
+			//PORTC &= ~(1 << PC3);
+			//break;
+		//}
+	//}
 }
-
-	
+#endif

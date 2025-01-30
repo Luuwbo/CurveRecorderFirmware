@@ -4,6 +4,8 @@
  * Created: 22.11.2024
  * Author : Uwe
  */ 
+
+#define CCRV 2
  
  #define CPU_SPEED 32000000
  #define F_CPU 32000000UL
@@ -23,7 +25,9 @@
  #include "Com_Debug.h"
  #include "KennLinienSchreiber.h"
  #include "ADS131.h"
-// #include "Befehlsinterpreter.h"
+ #include "DAC8554.h"
+ #include "Befehlsinterpreter.h"
+ #include "Modules.h"
  
  /* Prototypen */
  void InitCPU (void);
@@ -39,12 +43,14 @@
  void Loop20ms (void);
  void Loop1ms (void);
  void Loopxms (void);
+ void Loop100us(void);
  
 uint16_t MainTimer1000ms;
 uint16_t MainTimer100ms;
 uint8_t MainTimerxms;
 uint8_t MainTimer10ms;
 uint8_t MainTimer1ms;
+uint8_t MainTimer100us;
 uint16_t MainTime;
 
 char sh[10];
@@ -54,7 +60,7 @@ uint8_t ui8_PulsCycle;				//Statusvariable für Pulsausgabe
 
 //Test
 
-int32_t DACvalTest;
+int16_t DACvalTest = 0;
 uint8_t av;
 uint8_t chan = 0;
 
@@ -72,9 +78,6 @@ int main(void)
 	av = 0;
 	ui8_PulsCycle = 255;
 
-//	SetLTC1655Output(1,32768);
-//	SetLTC1655Output(2,32768);
-
 	Com_Debug_AddStringToBuffer("Start");
 
 	ADS131_INIT();
@@ -86,9 +89,18 @@ int main(void)
 	ADS131_ChanSet(5,1);
 	ADS131_ChanSet(6,1);
 	ADS131_ChanSet(7,1);
+	
+	DAC8554_INIT();
+	
+	MODULES_INIT();
 
     while (1) 
     {
+		if (MainTimer100us >= 1)
+		{
+			MainTimer100us = 0;
+			Loop100us();
+		}
 		if (MainTimer1ms >= 10)
 		{
 			MainTimer1ms -= 10;
@@ -128,7 +140,7 @@ void Loop100ms (void)
 	//for (i=0;i<12;i++)
 	//{
 		//Com_Debug_AddIntToBuffer(ADS131_ReadRegister(i),2);
-		//Com_Debug_AddStringToBuffer("-");	
+		//Com_Debug_AddStringToBuffer("-");
 	//}
 	//Com_Debug_AddCharToBuffer(13);
 }
@@ -138,33 +150,39 @@ void Loop10ms (void)
 	int16_t erg;
 //	KsK_SetRelais();
 
+
 	
-	ADS131_READDATA();
-	Com_Debug_AddIntToBuffer(ADC_data[0],2);
-	Com_Debug_AddIntToBuffer(ADC_data[1],2);
-	Com_Debug_AddIntToBuffer(ADC_data[2],2);
-	Com_Debug_AddStringToBuffer(";");
-	for (i=3;i<19;i+=2)
-	{
-		erg = ADC_data[i]*256+ADC_data[i+1];	
-		Com_Debug_AddIntToBuffer(erg,10);
-		Com_Debug_AddStringToBuffer(";");
-	}
-	Com_Debug_AddCharToBuffer(13);
+	//ADS131_READDATA();
+	//Com_Debug_AddIntToBuffer(ADC_data[0],2);
+	//Com_Debug_AddIntToBuffer(ADC_data[1],2);
+	//Com_Debug_AddIntToBuffer(ADC_data[2],2);
+	//Com_Debug_AddStringToBuffer(";");
+	//for (i=3;i<19;i+=2)
+	//{
+		//erg = ADC_data[i]*256+ADC_data[i+1];
+		//Com_Debug_AddIntToBuffer(erg,10);
+		//Com_Debug_AddStringToBuffer(";");
+	//}
+	//Com_Debug_AddCharToBuffer(13);
 }
 
 void Loopxms()
 {
-//	KsK_PulseMeas();
+
 //	KsK_StatMeas();
 }
 void Loop1ms (void)
 {
-	//Com_Debug_AddIntToBuffer(SystemTime100u,10);
-	//Com_Debug_AddCharToBuffer(13);
 
-//	BefInt();
 }
+void Loop100us(void)
+{	
+	BefInt();
+	KsK_PulseMeas();
+	//DAC8554_SetChan (1,DACvalTest);
+	//DACvalTest++;	
+}
+
 
 void InitVariables (void)
 {
@@ -198,9 +216,10 @@ void InitCPU (void)
 	PORTF_OUTSET = 1<<3;	// TxD -> high
 	PORTF_DIRCLR = 1<<2;	// PF2 = RxD -> in
 	
-	// Baudrate set
-	USARTF0_BAUDCTRLA = 0;												// tested to 2Mbit
-	USARTF0_BAUDCTRLB = 0<<USART_BSCALE0_bp;							// 
+	// Baudrate set   (115200=33,-1//2000000=0,0//57600=34,00//
+	USARTF0_BAUDCTRLA = 33;												// tested to 2Mbit
+	USARTF0_BAUDCTRLB = -1<<USART_BSCALE0_bp ;							// 
+	
 	//USART F0 for USB initialisieren	
 	USARTF0_CTRLC = (1<<USART_SBMODE_bp)|(0b011<<USART_CHSIZE0_bp);		/* Set frame format: 8data, 2stop bit */
 	USARTF0_CTRLA |= (0b10<<USART_RXCINTLVL0_bp);						/* Receive Interrupt enable & interrupt prio medium */
@@ -211,7 +230,14 @@ void InitCPU (void)
 	//SPCR = (1<<SPE) | (1<<MSTR) | (1<<SPR0)| (1<<SPR1);		/* SPE=1 DORD=0 MSTR=1 CPOL=0 CPHA=0 SPR1=1 SPR0=1 */
 	//SPI for ADC
 	PORTC_DIRSET = 0b10110000;		// MOSI & SCLK & SS as Output
-	SPIC_CTRL = 0b01010100;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 01 prescaler 1/4
+	SPIC_CTRL = 0b01010100;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 00 prescaler 1/4
+	//SPI for DAC
+	PORTD_DIRSET = 0b10110000;		// MOSI & SCLK & SS as Output
+	SPID_CTRL = 0b01010100;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 00 prescaler 1/4
+	//SPI for Modules
+	PORTE_DIRSET = 0b10111111;
+	SPIE_CTRL = 0b01010101;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 01 prescaler 1/16
+	
 	
 	
 // ------ Interrupt System init -------------------------------------------------------------------------------------
@@ -248,6 +274,7 @@ ISR (TCF0_OVF_vect)													//Timer 1 compare handler wird F_Interupt / sec 
 	MainTimerxms +=1;
 	MainTimer10ms +=1;
 	MainTimer1ms +=1;
+	MainTimer100us += 1;
 	MainTime += 1;
 	SystemTime100u += 1;
 };
