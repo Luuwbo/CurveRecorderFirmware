@@ -19,6 +19,12 @@
 
 void DAC8554_INIT (void)
 {
+	//  Offset der Kanäle definieren
+	DACchanOffset[0] = 61;
+	DACchanOffset[1] = 0;
+	DACchanOffset[2] = 0;
+	DACchanOffset[3] = 0;
+
 	PORTD_DIRSET = (1<<3) | (1<<4);
 	PORTD_OUTCLR = (1<<3);			// DAC_LDAC auf low
 	PORTD_OUTSET = (1<<4);			// DAC_SYNC auf high
@@ -38,6 +44,7 @@ void DAC8554_INIT (void)
 void DAC8554_SetChan (int chan, int val)
 // write to buffer and load val
 {
+	val = val - DACchanOffset[chan];
 	PORTD_OUTCLR = (1<<4);			// DAC_SYNC to low
 	_delay_us(5);
 	SPID_DATA = 0b00010000 | (chan<<1);
@@ -51,6 +58,7 @@ void DAC8554_SetChan (int chan, int val)
 void DAC8554_PreSetChan (int chan, int val)
 // write to buffer
 {
+	val = val - DACchanOffset[chan];
 	PORTD_OUTCLR = (1<<4);			// DAC_SYNC to low
 	_delay_us(5);
 	SPID_DATA = 0b00000000 | (chan<<1);

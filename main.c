@@ -82,13 +82,13 @@ int main(void)
 
 	ADS131_INIT();
 	ADS131_ChanSet(0,0);
-	ADS131_ChanSet(1,1);
-	ADS131_ChanSet(2,1);
-	ADS131_ChanSet(3,1);
-	ADS131_ChanSet(4,1);
-	ADS131_ChanSet(5,1);
-	ADS131_ChanSet(6,1);
-	ADS131_ChanSet(7,1);
+	ADS131_ChanSet(1,0);
+	ADS131_ChanSet(2,0);
+	ADS131_ChanSet(3,0);
+	ADS131_ChanSet(4,0);
+	ADS131_ChanSet(5,0);
+	ADS131_ChanSet(6,0);
+	ADS131_ChanSet(7,0);
 	
 	DAC8554_INIT();
 	
@@ -148,9 +148,7 @@ void Loop10ms (void)
 {
 	uint8_t i;
 	int16_t erg;
-//	KsK_SetRelais();
-
-
+	if (ui8_PulsCycle == 0) {KsK_SetRelais();}		//Relais setting only without pulse
 	
 	//ADS131_READDATA();
 	//Com_Debug_AddIntToBuffer(ADC_data[0],2);
@@ -195,8 +193,13 @@ void InitVariables (void)
 	MainTime = 0;
 
 	ui8_RGRange = 0;
-	ui8_UGvVoltageRange = 0;			
-	ui8_UGMeasInputRange = 0;		
+	ui8_RGRangeOld = 0;
+	ui8_UGvVoltageRange = 0;
+	ui8_UGvVoltageRangeOld = 0;
+	ui8_UGMeasInputRange = 0;	
+	ui8_UGMeasInputRangeOld = 0;
+	GA_Rel_Status[1] = 0;
+	GA_Rel_Status[2] = 0;	
 }
 
 void InitCPU (void)
@@ -236,7 +239,7 @@ void InitCPU (void)
 	SPID_CTRL = 0b01010100;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 00 prescaler 1/4
 	//SPI for Modules
 	PORTE_DIRSET = 0b10111111;
-	SPIE_CTRL = 0b01010101;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 01 prescaler 1/16
+	SPIE_CTRL = 0b01010001;			// 0 clock double - 1 enable - 0 msb first - 00 clk rising - 01 prescaler 1/16
 	
 	
 	

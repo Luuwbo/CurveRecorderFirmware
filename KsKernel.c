@@ -21,9 +21,11 @@
 #include "Com_Debug.h"
 #include "ADS131.h"
 #include "DAC8554.h"
+#include "Modules.h"
 
 
-void KsK_SetRegUDmV(int32_t i32_Ud)
+
+void KsK_SetRegUDmV(int32_t i32_Ud)		// skaliert den Sollwert in mV auf den DAC
 {
 	int64_t i64_v1;
 	//UD in bits für 16bit DAC umrechnen
@@ -32,10 +34,15 @@ void KsK_SetRegUDmV(int32_t i32_Ud)
 	{
 		i32_UDOutReg = (i64_v1 / c_i32_UDR1MaxAbs_mV) + 32768;
 	}
-	else
+	if (ui8_UDVoltageRange == 0)
 	{
 		i32_UDOutReg = (i64_v1 / c_i32_UDR0MaxAbs_mV) + 32768;
 	}
+	if (ui8_UDVoltageRange == 2)
+	{
+		i32_UDOutReg = (i64_v1 / c_i32_UDR2MaxAbs_mV) + 32768;
+	}
+	
 }
 void KsK_SetUD()
 {
@@ -63,16 +70,19 @@ void KsK_SetRegUGmV(int32_t i32_UG)
 }
 void KsK_SetUG()
 {
-	DAC8554_PreSetChan(c_UGDACchan,i32_UGOutReg);
+	DAC8554_SetChan(c_UG1DACchan,i32_UGOutReg);
 }
 void KsK_SetUGtoZero()
 {
-	DAC8554_PreSetChan(c_UGDACchan,32768);
+	DAC8554_SetChan(c_UG1DACchan,32768);
 }
 //-------------------------------------------------------------------------------------
 void KsK_PulseMeas()
 {
 	switch (ui8_PulsCycle){
+		
+		case 0: break;							// for speed
+		
 		case 1: KsK_SetUD();		
 				KsK_SetUG();
 				_delay_us(2);
@@ -85,8 +95,8 @@ void KsK_PulseMeas()
 				
 		case 3: ADS131_READDATA();
 				i32_UD = ((ADC_data[3+(c_UDADCchan<<1)])<<8) + ADC_data[3+(c_UDADCchan<<1)+1];
-				i32_UG = ((ADC_data[3+(c_UGADCchan<<1)])<<8) + ADC_data[3+(c_UGADCchan<<1)+1];
-				i32_UGv = ((ADC_data[3+(c_UGvADCchan<<1)])<<8) + ADC_data[3+(c_UGvADCchan<<1)+1];
+				i32_UG1 = ((ADC_data[3+(c_UG1ADCchan<<1)])<<8) + ADC_data[3+(c_UG1ADCchan<<1)+1];
+				i32_UGv1 = ((ADC_data[3+(c_UGv1ADCchan<<1)])<<8) + ADC_data[3+(c_UGv1ADCchan<<1)+1];
 				i32_US = ((ADC_data[3+(c_USADCchan<<1)])<<8) + ADC_data[3+(c_USADCchan<<1)+1];
 				KsK_SetUDtoZero();
 				KsK_SetUGtoZero();
@@ -97,161 +107,71 @@ void KsK_PulseMeas()
 				Com_Debug_AddCharToBuffer(13);					// LineFeed
 				break;
 	
-		default: ui8_PulsCycle = 0;  break;
+		default: ui8_PulsCycle = 0;  
+				break;
 	}
 }
 
 
-#if CCRV == 1	
-void KsK_StatMeas()
-{
-	switch (ui8_StatCycle){
-		case 1: KsK_SetUD();
-		KsK_SetUG();
-		ADS1115StartConversion(c_UDADCchan);
-		ADS1115StartConversion(c_USADCchan);
-		ui8_StatCycle += 1;
-		break;
-		
-		case 2: i32_UD = ADS1115GetDiffVal(c_UDADCchan);
-		i32_US = ADS1115GetDiffVal(c_USADCchan);
-		ADS1115StartConversion(c_UGADCchan);
-		ADS1115StartConversion(c_UGvADCchan);
-		ui8_StatCycle += 1;
-		break;
-		
-		case 3:	ADS1115StartConversion(c_UGADCchan);
-		ADS1115StartConversion(c_UGvADCchan);
-		ui8_StatCycle += 1;
-		break;
-		
-		case 4:	i32_UG = ADS1115GetDiffVal(c_UGADCchan);
-		i32_UGv = ADS1115GetDiffVal(c_UGvADCchan);
-		ui8_StatCycle += 1;
-		break;
-		
-		default: ui8_StatCycle = 0;  break;
-	}
-}
+//void KsK_StatMeas()
+//{
+	//switch (ui8_StatCycle){
+		//case 1: KsK_SetUD();
+		//KsK_SetUG();
+		//ADS1115StartConversion(c_UDADCchan);
+		//ADS1115StartConversion(c_USADCchan);
+		//ui8_StatCycle += 1;
+		//break;
+		//
+		//case 2: i32_UD = ADS1115GetDiffVal(c_UDADCchan);
+		//i32_US = ADS1115GetDiffVal(c_USADCchan);
+		//ADS1115StartConversion(c_UGADCchan);
+		//ADS1115StartConversion(c_UGvADCchan);
+		//ui8_StatCycle += 1;
+		//break;
+		//
+		//case 3:	ADS1115StartConversion(c_UGADCchan);
+		//ADS1115StartConversion(c_UGvADCchan);
+		//ui8_StatCycle += 1;
+		//break;
+		//
+		//case 4:	i32_UG = ADS1115GetDiffVal(c_UGADCchan);
+		//i32_UGv = ADS1115GetDiffVal(c_UGvADCchan);
+		//ui8_StatCycle += 1;
+		//break;
+		//
+		//default: ui8_StatCycle = 0;  break;
+	//}
+//}
 
 void KsK_SetRelais() {
-//// UGV Relais setzen (UGV5 an PD6)
-	//if (ui8_UGvVoltageRange == 1)
-	//{
-		//PORTD |= (1 << PD6);
-	//}
-	//else
-	//{
-		//PORTD &= ~(1 << PD6);
-	//}
-//
-//// UG Messeingang Empfindlichkeit (UGV6 an PD7)
-	//if (ui8_UGMeasInputRange == 1)
-	//{
-		//PORTD |= (1 << PD7);
-	//}
-	//else
-	//{
-		//PORTD &= ~(1 << PD7);
-	//}
-//
-//// UD Relais setzen (UD Relais an PB0)
-	//if (ui8_UDVoltageRange == 1)		// Spannung < 2V
-	//{
-		//PORTB |= (1 << PB0);
-	//}
-	//else
-	//{
-		//PORTB &= ~(1 << PB0);
-	//}
-//
+// UGv Relais setzen
+	if (ui8_UGvVoltageRange != ui8_UGvVoltageRangeOld) {
+		Modules_UGvRange_SET(ui8_UGvVoltageRange,1);
+		ui8_UGvVoltageRangeOld = ui8_UGvVoltageRange;
+	}
+	
+// UG Messeingang Empfindlichkeit (UGV6 an PD7)
+	if (ui8_UGMeasInputRange != ui8_UGMeasInputRangeOld) {
+		Modules_UGRange_SET(ui8_UGMeasInputRange,1);
+		ui8_UGMeasInputRangeOld = ui8_UGMeasInputRange;
+	}
+
+// UD Relais setzen
+	if (ui8_UDVoltageRangeOld != ui8_UDVoltageRange) {
+		Modules_VDRANGE_SET (ui8_UDVoltageRange);
+		ui8_UDVoltageRangeOld = ui8_UDVoltageRange;
+		}
+	
 //// RG Umschalten (UGV1 bis UG4 an PD2 bis PD5)
-//
-	//switch(ui8_RGRange)
-	//{
-		//case 1:
-		//{
-			//PORTD &= ~(1 << PD2);
-			//PORTD &= ~(1 << PD3);
-			//PORTD &= ~(1 << PD4);
-			//PORTD |= (1 << PD5);
-			//break;
-		//}
-		//case 2:
-		//{
-			//PORTD &= ~(1 << PD2);
-			//PORTD &= ~(1 << PD3);
-			//PORTD &= ~(1 << PD5);
-			//PORTD |= (1 << PD4);
-			//break;
-		//}
-		//case 3:
-		//{
-			//PORTD &= ~(1 << PD2);
-			//PORTD &= ~(1 << PD4);
-			//PORTD &= ~(1 << PD5);
-			//PORTD |= (1 << PD3);
-			//break;
-		//}
-		//case 4:
-		//{
-			//PORTD |= (1 << PD2);
-			//PORTD &= ~(1 << PD3);
-			//PORTD &= ~(1 << PD4);
-			//PORTD &= ~(1 << PD5);
-			//break;
-		//}
-		//default:
-		//{
-			//PORTD &= ~(1 << PD2);
-			//PORTD &= ~(1 << PD3);
-			//PORTD &= ~(1 << PD4);
-			//PORTD &= ~(1 << PD5);
-			//break;
-		//}
-	//}
+	if (ui8_RGRangeOld != ui8_RGRange) {
+		Modules_RG_SET (ui8_RGRange,1);
+		ui8_RGRangeOld = ui8_RGRange;
+	}
+
 	//switch(ui8_RSRange)
 	//{
 		//case 1:
-		//{
-			//PORTC |= (1 << PC0);
-			//PORTC &= ~(1 << PC1);
-			//PORTC &= ~(1 << PC2);
-			//PORTC &= ~(1 << PC3);
-			//break;
-		//}
-		//case 2:
-		//{
-			//PORTC &= ~(1 << PC0);
-			//PORTC &= ~(1 << PC2);
-			//PORTC &= ~(1 << PC3);
-			//PORTC |= (1 << PC1);
-			//break;
-		//}
-		//case 3:
-		//{
-			//PORTC &= ~(1 << PC0);
-			//PORTC &= ~(1 << PC1);
-			//PORTC &= ~(1 << PC3);
-			//PORTC |= (1 << PC2);
-			//break;
-		//}
-		//case 4:
-		//{
-			//PORTC &= ~(1 << PC0);
-			//PORTC &= ~(1 << PC1);
-			//PORTC &= ~(1 << PC2);
-			//PORTC |= (1 << PC3);
-			//break;
-		//}
-		//default:
-		//{
-			//PORTC &= ~(1 << PC0);
-			//PORTC &= ~(1 << PC1);
-			//PORTC &= ~(1 << PC2);
-			//PORTC &= ~(1 << PC3);
-			//break;
-		//}
+
 	//}
 }
-#endif

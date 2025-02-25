@@ -9,20 +9,6 @@
 #ifndef KENNLINIENSCHREIBER_H_
 #define KENNLINIENSCHREIBER_H_
 
-// Modul ADS1115
-#define ADS1115_Adr_GND 0b10010000			//Adresse für ADDR = GND
-#define ADS1115_Adr_VDD 0b10010010			//Adresse für ADDR = VDD
-#define ADS1115_Adr_Reg_Config 0b00000001	//Adresse Config Register
-#define ADS1115_Adr_Reg_Conversion 0		//Adresse Result Register
-// int32_t GetADS1115DiffVal(int8_t Chan);
-// void ADS1115StartConversion(int8_t Chan);
-// int32_t ADS1115GetDiffVal(int8_t Chan);
-
-// Modul DAC_MCP4725
-#define MPC4725_Adr_GND 0b11000000			//Adresse für ADDR = GND
-#define MPC4725_Adr_VDD 0b11000010			//Adresse für ADDR = VDD
-#define MPC4725_DAC_Reg 0b01000000			//command
-
 // Modul KAL
 //void Kal_UD();
 //void Kal_UG();
@@ -30,26 +16,26 @@
 
 // HW Leiterplatte
 #define c_UDDACchan 0			//DAC Kanal für UD soll
-#define c_UGDACchan 1			//DAC Kanal für UG soll
-#define c_UG2DACchen 2			//DAC KANAL für UG2 soll
+#define c_UG1DACchan 1			//DAC Kanal für UG1 soll
+#define c_UG2DACchan 2			//DAC KANAL für UG2 soll
 #define c_TempDACchan 3			//DAC KANAL für DUT Temperatur soll
 
 #define c_UDADCchan 0			//ADC Kanal für UD ist
-#define c_UGADCchan 1			//ADC Kanal für UG ist
-#define c_UGvADCchan 2
+#define c_UG1ADCchan 1			//ADC Kanal für UG1 ist
+#define c_UGv1ADCchan 2
 #define c_UG2ADCchan 3			//ADC Kanal für UG2 ist
-#define c_UG2vADCchan 4
+#define c_UGv2ADCchan 4
 #define c_USADCchan 5			//ADC Kanal für US ist
 #define c_USDutADCchan 6		//ADC Kanal für USDUT ist (Innenwiderstand Relais etc)
 #define c_TempDutADCchan 7
 
 
+#define c_i32_UDR0MaxAbs_mV 2500		//maximale Ausgangsspannung von UD 
+#define c_i32_UDR1MaxAbs_mV	25000		//maximale Ausgangsspannung von UD 
+#define c_i32_UDR2MaxAbs_mV	250000
 
-
-#define c_i32_UDR0MaxAbs_mV 25227		//maximale Ausgangsspannung von UD bei Relais aus
-#define c_i32_UDR1MaxAbs_mV	2500		//maximale Ausgangsspannung von UD bei Relais ein
-#define c_i32_UGr0MaxAbs_mV 12250		//maximale Ausgangsspannung von UGr0
-#define c_i32_UGr1MaxAbs_mV 2500		//maximale Ausgangsspannung von UGr0
+#define c_i32_UGr0MaxAbs_mV 2500		//maximale Ausgangsspannung von UGr0
+#define c_i32_UGr1MaxAbs_mV 25000		//maximale Ausgangsspannung von UGr0
 
 
 uint32_t SystemTime100u;
@@ -61,20 +47,31 @@ int32_t i32_UGOutReg;
 int32_t i32_UDs;						// Sollwert UD in mV
 int32_t i32_UGs;						// Sollwert UG in mV
 int32_t i32_UD;							// Istwert UD in mV
-int32_t i32_UG;							// Istwert UG in mV
-int32_t i32_UGv;
+int32_t i32_UG1;							// Istwert UG in mV
+int32_t i32_UGv1;
+int32_t i32_UG2;							// Istwert UG in mV
+int32_t i32_UGv2;
 int32_t i32_US;							// Istwert US in uV
 int32_t i32_RS;							// Istwert RS in uV
-uint8_t ui8_UGvVoltageRange;			// Istwert des Spannungsbereichs für das Gate [0,1]
-uint8_t ui8_UDVoltageRange;				// Verstärkung des Spannungsbereichs für UD [0,1]
-uint8_t ui8_UGMeasInputRange;			// Istwert der Messbereichsumschaltung für UG [0,1]
-uint8_t ui8_RGRange;					// eingestellter RG [0,1,2,3,4}		
-uint8_t ui8_RSRange;					// eingestellter RG [1,2,3,4}	
 
+uint8_t ui8_UDVoltageRange;				// Verstärkung des Spannungsbereichs für UD [0,1,2]
+uint8_t ui8_UDVoltageRangeOld;	
+uint8_t ui8_UGvVoltageRange;			// Istwert des Spannungsbereichs für das Gate [0,1]
+uint8_t ui8_UGvVoltageRangeOld;
+uint8_t ui8_UGMeasInputRange;			// Istwert der Messbereichsumschaltung für UG [0,1]
+uint8_t ui8_UGMeasInputRangeOld;
+uint8_t ui8_RGRange;					// eingestellter RG [0,1,2,3,4}	
+uint8_t ui8_RGRangeOld;	
+uint8_t ui8_RSRange;					// eingestellter RG [1,2,3,4}	
 
 uint8_t ui8_PulsCycle;				// zum auslösen eines Pulses auf 1 setzten
 uint8_t ui8_StatCycle;
 uint8_t ADC_data[20];
+
+uint8_t DACchanOffset[3];
+
+uint8_t GA_Rel_Status[2];			// Status der Relaisposoitionen auf 2 GateAmps
+
 
 void KsK_SetUD();
 void KsK_SetRegUDmV(int32_t i32_UD);
@@ -84,6 +81,6 @@ void KsK_SetRegUGmV(int32_t i32_UD);
 //void KsK_SetUGtoZero();
 void KsK_PulseMeas();
 //void KsK_StatMeas();
-//void KsK_SetRelais();
+void KsK_SetRelais();
 
 #endif /* KENNLINIENSCHREIBER_H_ */

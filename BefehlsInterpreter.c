@@ -10,12 +10,12 @@
  #include <stdlib.h>
  #include "Com_Debug.h"
  #include "KennLinienSchreiber.h"
-
  #include "Befehlsinterpreter.h"
  
- // !Dxxxxx -> UD [mV] setzen / string 6 byte /
- // !Gxxxxx -> UG [mV] setzen / string 6 byte / 
+ // !D[68]xxxxx -> UD [mV] setzen / string 6 byte /
+ // !G[71]xxxxx -> UG [mV] setzen / string 6 byte / 
  // !P -> messimpuls auslösen
+ // !K[75] -> UD Spannungsbereich 
  
  void BefInt ()
  {
@@ -314,7 +314,7 @@
 					case 103:	// Befehl "g" für UG an PC senden
 					{
 						Com_Debug_AddCharToBuffer(103);
-						Com_Debug_AddIntToBuffer(i32_UG,10);
+						Com_Debug_AddIntToBuffer(i32_UG1,10);
 						Com_Debug_AddCharToBuffer(10);					// LineFeed
 						Com_Debug_AddCharToBuffer(13);					// LineFeed
 						aa=0;
@@ -374,7 +374,7 @@
 					case 118:	// Befehl "v" für UGv an PC senden
 					{
 						Com_Debug_AddCharToBuffer(118);
-						Com_Debug_AddIntToBuffer(i32_UGv,10);
+						Com_Debug_AddIntToBuffer(i32_UGv1,10);
 						Com_Debug_AddCharToBuffer(10);					// LineFeed
 						Com_Debug_AddCharToBuffer(13);					// LineFeed
 						aa=0;
@@ -389,10 +389,10 @@
 						Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
 						Com_Debug_AddCharToBuffer(68);			// D für UD Ende
 						Com_Debug_AddCharToBuffer(103);			// UG
-						Com_Debug_AddIntToBuffer(i32_UG,10);
+						Com_Debug_AddIntToBuffer(i32_UG1,10);
 						Com_Debug_AddCharToBuffer(71);
 						Com_Debug_AddCharToBuffer(118);			// UGv
-						Com_Debug_AddIntToBuffer(i32_UGv,10);
+						Com_Debug_AddIntToBuffer(i32_UGv1,10);
 						Com_Debug_AddCharToBuffer(86);
 						Com_Debug_AddCharToBuffer(115);			// Us
 						Com_Debug_AddIntToBuffer(i32_US,10);

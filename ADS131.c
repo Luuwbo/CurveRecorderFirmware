@@ -50,7 +50,7 @@ void ADS131_ChanSet(uint8_t chan, uint8_t mux)
 	_delay_us(serdelay);
 	SPIC_DATA = 0;							// für 1 Register
 	_delay_us(serdelay);
-	SPIC_DATA = 0b00010000 + mux;					// gain = 1 / Input shorted
+	SPIC_DATA = 0b00010000 + mux;					// gain = 1
 	_delay_us(serdelay);
 	PORTC_OUTSET = (1<<4);					// CS high
 	_delay_us(serdelay);
