@@ -14,8 +14,15 @@
  
  // !D[68]xxxxx -> UD [mV] setzen / string 6 byte /
  // !G[71]xxxxx -> UG [mV] setzen / string 6 byte / 
- // !P -> messimpuls auslösen
- // !K[75] -> UD Spannungsbereich 
+ // !H[72]x		-> Gatespannungsbereich setzen (Relais)
+ // !I[73]x		-> Ug Messempfindlichkeit (Relais)
+ // !J[74]x		-> RG per Relais setzen
+ // !K[75]xxxxx	-> UD Spannungsbereich 
+ // !P[80]x		-> Messimpuls auslösen
+ // !W[87]x		-> Pulsweite einstellen
+ // !X[88]x		-> VG static (=1)
+ // !X[89]x		-> VD static (=1)
+ // !z[122]x		-> alle Daten en Block senden
  
  void BefInt ()
  {
@@ -110,7 +117,7 @@
 					}
 
 					case 72:	// Befehl "H" für UGv GateSpannungsbereich per Relais setzen
-								// aktuell high = 1(2,048V), Low = 0 (12V) 
+								// aktuell high = 0(2,400V), Low = 1 (24V) 
 					{
 						AtrChars = 2;
 						atrcnt++;
@@ -224,8 +231,7 @@
 					}
 
 					case 82:	// Befehl "R" Rs setzen
-					{
-						
+					{						
 						AtrChars = 2;
 						atrcnt++;
 						if (AtrChars <= Com_Debug_CharsInBuffer())
@@ -257,6 +263,85 @@
 						bf=0;
 						break;
 					}
+					
+					case 87:	// Befehl "W" Pulsweite setzen
+					{
+						AtrChars = 3;
+						atrcnt++;
+						if (AtrChars <= Com_Debug_CharsInBuffer())
+						{
+							for(l=0;l<AtrChars;l++)
+							{
+								sAtr[l] = Com_Debug_ReadCharFromInBuffer ();
+							}
+							ui8_PulsWidth = atoi(sAtr);
+							aa=0;
+							bf=0;
+						}
+						else
+						{
+							if (atrcnt >= 200)  //Timeout für Atrribut lesen
+							{
+								aa = 0;
+								bf = 0;
+								atrcnt = 0;
+							}
+						}
+						break;
+					}
+					
+					case 88:	// Befehl "X" setzt VG auf statisch (=1) oder dynamisch (=0)
+					{
+						AtrChars = 2;
+						atrcnt++;
+						if (AtrChars <= Com_Debug_CharsInBuffer())
+						{
+							for(l=0;l<AtrChars;l++)
+							{
+								sAtr[l] = Com_Debug_ReadCharFromInBuffer ();
+							}
+							ui8_UGstatic = atoi(sAtr);
+							aa=0;
+							bf=0;
+						}
+						else
+						{
+							if (atrcnt >= 200)  //Timeout für Atrribut lesen
+							{
+								aa = 0;
+								bf = 0;
+								atrcnt = 0;
+							}
+						}
+						break;
+					}
+					
+					case 89:	// Befehl "Y" setzt VD auf statisch (=1) oder dynamisch (=0)
+					{
+						AtrChars = 2;
+						atrcnt++;
+						if (AtrChars <= Com_Debug_CharsInBuffer())
+						{
+							for(l=0;l<AtrChars;l++)
+							{
+								sAtr[l] = Com_Debug_ReadCharFromInBuffer ();
+							}
+							ui8_UDstatic = atoi(sAtr);
+							aa=0;
+							bf=0;
+						}
+						else
+						{
+							if (atrcnt >= 200)  //Timeout für Atrribut lesen
+							{
+								aa = 0;
+								bf = 0;
+								atrcnt = 0;
+							}
+						}
+						break;
+					}									
+					
 
 					case 98:	// Befehl "b" für RG an PC senden
 					{
@@ -347,6 +432,11 @@
 								Com_Debug_AddIntToBuffer(10000,10);
 								break;
 							}
+							case 5:
+							{
+								Com_Debug_AddIntToBuffer(100000,10);
+								break;
+							}
 							default:
 							{
 								Com_Debug_AddIntToBuffer(10,10);
@@ -363,7 +453,7 @@
 					case 115:	// Befehl "s" für US an PC senden
 					{
 						Com_Debug_AddCharToBuffer(115);
-						Com_Debug_AddIntToBuffer(i32_US,10);
+						Com_Debug_AddIntToBuffer(i32_URS,10);
 						Com_Debug_AddCharToBuffer(10);					// LineFeed
 						Com_Debug_AddCharToBuffer(13);					// LineFeed
 						aa=0;
@@ -394,8 +484,8 @@
 						Com_Debug_AddCharToBuffer(118);			// UGv
 						Com_Debug_AddIntToBuffer(i32_UGv1,10);
 						Com_Debug_AddCharToBuffer(86);
-						Com_Debug_AddCharToBuffer(115);			// Us
-						Com_Debug_AddIntToBuffer(i32_US,10);
+						Com_Debug_AddCharToBuffer(115);			// URs
+						Com_Debug_AddIntToBuffer(i32_URS,10);
 						Com_Debug_AddCharToBuffer(83);
 						Com_Debug_AddCharToBuffer(114);			// Rs
 						switch (ui8_RSRange)
@@ -418,6 +508,11 @@
 							case 4:
 							{
 								Com_Debug_AddIntToBuffer(10000,10);
+								break;
+							}
+							case 5:
+							{
+								Com_Debug_AddIntToBuffer(100000,10);
 								break;
 							}
 							default:

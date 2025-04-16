@@ -70,6 +70,9 @@ void Modules_RG_SET (int8_t rgra, uint8_t chan)		//set RG
 		case 4:
 			rv = 0b00001000;
 			break;
+		case 5:
+		rv = 0b00010000;
+		break;
 		default:
 			rv = 0b00000000;
 			break;
@@ -103,4 +106,35 @@ void Modules_UGRange_SET (int8_t range, int8_t chan)
 	PORTE_OUTSET = (1<<Modules_VGA1_DSET);	// Puls for dataset
 	_delay_us(5);
 	PORTE_OUTCLR = (1<<Modules_VGA1_DSET);
+}
+
+void Modules_RS_SET (int8_t rsr)		//set RS
+{	uint8_t rv;
+	switch (rsr){
+		case 1:
+		rv = 0b00000001;
+		break;
+		case 2:
+		rv = 0b00100010;
+		break;
+		case 3:
+		rv = 0b00100100;
+		break;
+		case 4:
+		rv = 0b00101000;
+		break;
+		case 5:
+		rv = 0b00110000;
+		break;
+		default:
+		rv = 0b00000001;
+		break;
+	}
+	IS_Rel_Status &= 0b11000000;
+	IS_Rel_Status |= rv;
+	SPIE_DATA = IS_Rel_Status;
+	while(!(SPIE_STATUS & SPI_IF_bm));
+	PORTE_OUTSET = (1<<Modules_IS_DSET);	// Puls for dataset
+	_delay_us(5);
+	PORTE_OUTCLR = (1<<Modules_IS_DSET);
 }

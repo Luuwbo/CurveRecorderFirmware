@@ -71,8 +71,6 @@ int main(void)
 	InitCPU();
 	
 	TimerInit();
-//	i2c_init();
-	
 
 	DACvalTest = 0;
 	av = 0;
@@ -198,8 +196,14 @@ void InitVariables (void)
 	ui8_UGvVoltageRangeOld = 0;
 	ui8_UGMeasInputRange = 0;	
 	ui8_UGMeasInputRangeOld = 0;
+	ui8_RSRange = 1;
+	ui8_RSRangeOld = 1;
 	GA_Rel_Status[1] = 0;
-	GA_Rel_Status[2] = 0;	
+	GA_Rel_Status[2] = 0;
+	IS_Rel_Status = 1;				//switch to RS min 
+	ui8_UGstatic = 0;				// UG dynamic
+	ui8_UDstatic = 0;				// UG dynamic
+	ui8_PulsWidth = 0;
 }
 
 void InitCPU (void)

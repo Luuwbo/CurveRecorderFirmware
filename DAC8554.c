@@ -21,7 +21,7 @@ void DAC8554_INIT (void)
 {
 	//  Offset der Kanäle definieren
 	DACchanOffset[0] = 61;
-	DACchanOffset[1] = 0;
+	DACchanOffset[1] = 20;
 	DACchanOffset[2] = 0;
 	DACchanOffset[3] = 0;
 

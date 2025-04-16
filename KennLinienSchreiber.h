@@ -25,7 +25,7 @@
 #define c_UGv1ADCchan 2
 #define c_UG2ADCchan 3			//ADC Kanal für UG2 ist
 #define c_UGv2ADCchan 4
-#define c_USADCchan 5			//ADC Kanal für US ist
+#define c_URSADCchan 5			//ADC Kanal für US ist
 #define c_USDutADCchan 6		//ADC Kanal für USDUT ist (Innenwiderstand Relais etc)
 #define c_TempDutADCchan 7
 
@@ -51,7 +51,7 @@ int32_t i32_UG1;							// Istwert UG in mV
 int32_t i32_UGv1;
 int32_t i32_UG2;							// Istwert UG in mV
 int32_t i32_UGv2;
-int32_t i32_US;							// Istwert US in uV
+int32_t i32_URS;							// Istwert URS in uV
 int32_t i32_RS;							// Istwert RS in uV
 
 uint8_t ui8_UDVoltageRange;				// Verstärkung des Spannungsbereichs für UD [0,1,2]
@@ -63,14 +63,20 @@ uint8_t ui8_UGMeasInputRangeOld;
 uint8_t ui8_RGRange;					// eingestellter RG [0,1,2,3,4}	
 uint8_t ui8_RGRangeOld;	
 uint8_t ui8_RSRange;					// eingestellter RG [1,2,3,4}	
+uint8_t ui8_RSRangeOld;
+uint8_t ui8_UGstatic;
+uint8_t ui8_UDstatic;
 
 uint8_t ui8_PulsCycle;				// zum auslösen eines Pulses auf 1 setzten
 uint8_t ui8_StatCycle;
+uint8_t ui8_PulsWidth;
+uint8_t ui8_PulsWidthCounter;
 uint8_t ADC_data[20];
 
 uint8_t DACchanOffset[3];
 
 uint8_t GA_Rel_Status[2];			// Status der Relaisposoitionen auf 2 GateAmps
+uint8_t IS_Rel_Status;
 
 
 void KsK_SetUD();

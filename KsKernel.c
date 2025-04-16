@@ -87,21 +87,26 @@ void KsK_PulseMeas()
 				KsK_SetUG();
 				_delay_us(2);
 				DAC8554_LoadDataHW();			// über HW-Leitung LDAC alle DAC Kanäle setzen
+				ui8_PulsWidthCounter = 0;
 				ui8_PulsCycle += 1;
 				break;
 				
-		case 2: ui8_PulsCycle += 1;
+		case 2: ui8_PulsWidthCounter += 1;
+				if (ui8_PulsWidthCounter >= ui8_PulsWidth)
+				{
+					ui8_PulsCycle = 3;
+				} 
 				break;
 				
 		case 3: ADS131_READDATA();
 				i32_UD = ((ADC_data[3+(c_UDADCchan<<1)])<<8) + ADC_data[3+(c_UDADCchan<<1)+1];
 				i32_UG1 = ((ADC_data[3+(c_UG1ADCchan<<1)])<<8) + ADC_data[3+(c_UG1ADCchan<<1)+1];
 				i32_UGv1 = ((ADC_data[3+(c_UGv1ADCchan<<1)])<<8) + ADC_data[3+(c_UGv1ADCchan<<1)+1];
-				i32_US = ((ADC_data[3+(c_USADCchan<<1)])<<8) + ADC_data[3+(c_USADCchan<<1)+1];
-				KsK_SetUDtoZero();
-				KsK_SetUGtoZero();
+				i32_URS = ((ADC_data[3+(c_URSADCchan<<1)])<<8) + ADC_data[3+(c_URSADCchan<<1)+1];
+				if (ui8_UDstatic == 0) {KsK_SetUDtoZero();}
+				if (ui8_UGstatic == 0) {KsK_SetUGtoZero();}
 				ui8_PulsCycle = 0;
-				_delay_ms(1);
+				_delay_us(100);
 				Com_Debug_AddCharToBuffer(80);					// "P" Pulsmessung fertig melden
 				Com_Debug_AddCharToBuffer(10);					// LineFeed
 				Com_Debug_AddCharToBuffer(13);					// LineFeed
@@ -113,37 +118,6 @@ void KsK_PulseMeas()
 }
 
 
-//void KsK_StatMeas()
-//{
-	//switch (ui8_StatCycle){
-		//case 1: KsK_SetUD();
-		//KsK_SetUG();
-		//ADS1115StartConversion(c_UDADCchan);
-		//ADS1115StartConversion(c_USADCchan);
-		//ui8_StatCycle += 1;
-		//break;
-		//
-		//case 2: i32_UD = ADS1115GetDiffVal(c_UDADCchan);
-		//i32_US = ADS1115GetDiffVal(c_USADCchan);
-		//ADS1115StartConversion(c_UGADCchan);
-		//ADS1115StartConversion(c_UGvADCchan);
-		//ui8_StatCycle += 1;
-		//break;
-		//
-		//case 3:	ADS1115StartConversion(c_UGADCchan);
-		//ADS1115StartConversion(c_UGvADCchan);
-		//ui8_StatCycle += 1;
-		//break;
-		//
-		//case 4:	i32_UG = ADS1115GetDiffVal(c_UGADCchan);
-		//i32_UGv = ADS1115GetDiffVal(c_UGvADCchan);
-		//ui8_StatCycle += 1;
-		//break;
-		//
-		//default: ui8_StatCycle = 0;  break;
-	//}
-//}
-
 void KsK_SetRelais() {
 // UGv Relais setzen
 	if (ui8_UGvVoltageRange != ui8_UGvVoltageRangeOld) {
@@ -151,7 +125,7 @@ void KsK_SetRelais() {
 		ui8_UGvVoltageRangeOld = ui8_UGvVoltageRange;
 	}
 	
-// UG Messeingang Empfindlichkeit (UGV6 an PD7)
+// UG Messeingang Empfindlichkeit
 	if (ui8_UGMeasInputRange != ui8_UGMeasInputRangeOld) {
 		Modules_UGRange_SET(ui8_UGMeasInputRange,1);
 		ui8_UGMeasInputRangeOld = ui8_UGMeasInputRange;
@@ -163,15 +137,15 @@ void KsK_SetRelais() {
 		ui8_UDVoltageRangeOld = ui8_UDVoltageRange;
 		}
 	
-//// RG Umschalten (UGV1 bis UG4 an PD2 bis PD5)
+//// RG Umschalten
 	if (ui8_RGRangeOld != ui8_RGRange) {
 		Modules_RG_SET (ui8_RGRange,1);
 		ui8_RGRangeOld = ui8_RGRange;
 	}
 
-	//switch(ui8_RSRange)
-	//{
-		//case 1:
-
-	//}
+//// RS Umschalten
+if (ui8_RSRangeOld != ui8_RSRange) {
+	Modules_RS_SET (ui8_RSRange);
+	ui8_RSRangeOld = ui8_RSRange;
+	}
 }
