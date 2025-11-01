@@ -78,7 +78,7 @@ void KsK_SetUGtoZero()
 }
 //-------------------------------------------------------------------------------------
 void KsK_PulseMeas()
-{
+{  // wird alle 100us aufgerufen
 	switch (ui8_PulsCycle){
 		
 		case 0: break;							// for speed
@@ -103,13 +103,12 @@ void KsK_PulseMeas()
 				i32_UG1 = ((ADC_data[3+(c_UG1ADCchan<<1)])<<8) + ADC_data[3+(c_UG1ADCchan<<1)+1];
 				i32_UGv1 = ((ADC_data[3+(c_UGv1ADCchan<<1)])<<8) + ADC_data[3+(c_UGv1ADCchan<<1)+1];
 				i32_URS = ((ADC_data[3+(c_URSADCchan<<1)])<<8) + ADC_data[3+(c_URSADCchan<<1)+1];
+				i32_US = ((ADC_data[3+(c_USDutADCchan<<1)])<<8) + ADC_data[3+(c_USDutADCchan<<1)+1];
 				if (ui8_UDstatic == 0) {KsK_SetUDtoZero();}
 				if (ui8_UGstatic == 0) {KsK_SetUGtoZero();}
 				ui8_PulsCycle = 0;
 				_delay_us(100);
-				Com_Debug_AddCharToBuffer(80);					// "P" Pulsmessung fertig melden
-				Com_Debug_AddCharToBuffer(10);					// LineFeed
-				Com_Debug_AddCharToBuffer(13);					// LineFeed
+				SendDataAll();
 				break;
 	
 		default: ui8_PulsCycle = 0;  
@@ -117,6 +116,103 @@ void KsK_PulseMeas()
 	}
 }
 
+void SendDataAll(){
+	
+	Com_Debug_AddCharToBuffer(122);			//sende z
+	
+	Com_Debug_AddCharToBuffer(100);			// d für UD Anfang
+	Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
+	Com_Debug_AddCharToBuffer(68);			// D für UD Ende
+	
+	Com_Debug_AddCharToBuffer(103);			// UG
+	Com_Debug_AddIntToBuffer(i32_UG1,10);
+	Com_Debug_AddCharToBuffer(71);
+	
+	Com_Debug_AddCharToBuffer(118);			// UG1v
+	Com_Debug_AddIntToBuffer(i32_UGv1,10);
+	Com_Debug_AddCharToBuffer(86);
+	
+	Com_Debug_AddCharToBuffer(115);			// URs
+	Com_Debug_AddIntToBuffer(i32_URS,10);
+	Com_Debug_AddCharToBuffer(83);
+	
+	Com_Debug_AddCharToBuffer(114);			// Rs
+
+	switch (ui8_RSRange)
+	{
+		case 1:
+		{
+			Com_Debug_AddIntToBuffer(10,10);
+			break;
+		}
+		case 2:
+		{
+			Com_Debug_AddIntToBuffer(100,10);
+			break;
+		}
+		case 3:
+		{
+			Com_Debug_AddIntToBuffer(1000,10);
+			break;
+		}
+		case 4:
+		{
+			Com_Debug_AddIntToBuffer(10000,10);
+			break;
+		}
+		case 5:
+		{
+			Com_Debug_AddIntToBuffer(100000,10);
+			break;
+		}
+		default:
+		{
+			Com_Debug_AddIntToBuffer(10,10);
+		}
+	}
+	Com_Debug_AddCharToBuffer(82);
+	Com_Debug_AddCharToBuffer(98);
+	switch (ui8_RGRange)
+	{
+		case 0:
+		{
+			Com_Debug_AddIntToBuffer(1000000,10);
+			break;
+		}
+		case 1:
+		{
+			Com_Debug_AddIntToBuffer(99099,10);
+			break;
+		}
+		case 2:
+		{
+			Com_Debug_AddIntToBuffer(9901,10);
+			break;
+		}
+		case 3:
+		{
+			Com_Debug_AddIntToBuffer(999,10);
+			break;
+		}
+		case 4:
+		{
+			Com_Debug_AddIntToBuffer(100,10);
+			break;
+		}
+		default:
+		{
+			Com_Debug_AddIntToBuffer(1000000,10);
+		}
+	}
+	Com_Debug_AddCharToBuffer(66);
+		
+	Com_Debug_AddCharToBuffer(116);			// US
+	Com_Debug_AddIntToBuffer(i32_US,10);
+	Com_Debug_AddCharToBuffer(84);
+	
+	Com_Debug_AddCharToBuffer(10);					// LineFeed
+	Com_Debug_AddCharToBuffer(13);					// LineFeed
+}
 
 void KsK_SetRelais() {
 // UGv Relais setzen

@@ -22,6 +22,7 @@
  // !W[87]x		-> Pulsweite einstellen
  // !X[88]x		-> VG static (=1)
  // !X[89]x		-> VD static (=1)
+ // !s[116]x	-> US senden
  // !z[122]x		-> alle Daten en Block senden
  
  void BefInt ()
@@ -340,6 +341,40 @@
 							}
 						}
 						break;
+					}
+					
+					case 90:  // Befehl "Z" setzt UD und UGv zusammen
+					{
+						AtrChars = 12;
+						atrcnt++;
+						if (AtrChars<= Com_Debug_CharsInBuffer())
+						{
+							for(l=0;l<6;l++)
+							{
+								sAtr[l] = Com_Debug_ReadCharFromInBuffer ();
+							}
+							i32_UDs = strtol(sAtr,0,10);
+							KsK_SetRegUDmV(i32_UDs);
+							for(l=0;l<6;l++)
+							{
+								sAtr[l] = Com_Debug_ReadCharFromInBuffer ();
+							}
+							i32_UGs = strtol(sAtr,0,10);
+							KsK_SetRegUGmV (i32_UGs);
+							aa=0;
+							bf=0;
+						}
+						else
+						{
+							if (atrcnt >= 200)  //Timeout für Atrribut lesen
+							{
+								aa = 0;
+								bf = 0;
+								atrcnt = 0;
+							}
+						}
+						break;
+						
 					}									
 					
 
@@ -450,10 +485,20 @@
 
 					}
 
-					case 115:	// Befehl "s" für US an PC senden
+					case 115:	// Befehl "s" für URS an PC senden
 					{
 						Com_Debug_AddCharToBuffer(115);
 						Com_Debug_AddIntToBuffer(i32_URS,10);
+						Com_Debug_AddCharToBuffer(10);					// LineFeed
+						Com_Debug_AddCharToBuffer(13);					// LineFeed
+						aa=0;
+						bf=0;
+						break;
+					}
+					case 116:	// Befehl "t" für US an PC senden
+					{
+						Com_Debug_AddCharToBuffer(116);
+						Com_Debug_AddIntToBuffer(i32_US,10);
 						Com_Debug_AddCharToBuffer(10);					// LineFeed
 						Com_Debug_AddCharToBuffer(13);					// LineFeed
 						aa=0;
@@ -474,89 +519,7 @@
 					
 					case 122:	// Befehl "z" für alle Daten en Block zum PC senden
 					{
-						Com_Debug_AddCharToBuffer(122);			//sende z
-						Com_Debug_AddCharToBuffer(100);			// d für UD Anfang
-						Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
-						Com_Debug_AddCharToBuffer(68);			// D für UD Ende
-						Com_Debug_AddCharToBuffer(103);			// UG
-						Com_Debug_AddIntToBuffer(i32_UG1,10);
-						Com_Debug_AddCharToBuffer(71);
-						Com_Debug_AddCharToBuffer(118);			// UGv
-						Com_Debug_AddIntToBuffer(i32_UGv1,10);
-						Com_Debug_AddCharToBuffer(86);
-						Com_Debug_AddCharToBuffer(115);			// URs
-						Com_Debug_AddIntToBuffer(i32_URS,10);
-						Com_Debug_AddCharToBuffer(83);
-						Com_Debug_AddCharToBuffer(114);			// Rs
-						switch (ui8_RSRange)
-						{
-							case 1:
-							{
-								Com_Debug_AddIntToBuffer(10,10);
-								break;
-							}
-							case 2:
-							{
-								Com_Debug_AddIntToBuffer(100,10);
-								break;
-							}
-							case 3:
-							{
-								Com_Debug_AddIntToBuffer(1000,10);
-								break;
-							}
-							case 4:
-							{
-								Com_Debug_AddIntToBuffer(10000,10);
-								break;
-							}
-							case 5:
-							{
-								Com_Debug_AddIntToBuffer(100000,10);
-								break;
-							}
-							default:
-							{
-								Com_Debug_AddIntToBuffer(10,10);
-							}
-						}
-						Com_Debug_AddCharToBuffer(82);
-						Com_Debug_AddCharToBuffer(98);
-						switch (ui8_RGRange)
-						{
-							case 0:
-							{
-								Com_Debug_AddIntToBuffer(1000000,10);
-								break;
-							}
-							case 1:
-							{
-								Com_Debug_AddIntToBuffer(99099,10);
-								break;
-							}
-							case 2:
-							{
-								Com_Debug_AddIntToBuffer(9901,10);
-								break;
-							}
-							case 3:
-							{
-								Com_Debug_AddIntToBuffer(999,10);
-								break;
-							}
-							case 4:
-							{
-								Com_Debug_AddIntToBuffer(100,10);
-								break;
-							}
-							default:
-							{
-								Com_Debug_AddIntToBuffer(1000000,10);
-							}
-						}
-						Com_Debug_AddCharToBuffer(66);
-						Com_Debug_AddCharToBuffer(10);					// LineFeed
-						Com_Debug_AddCharToBuffer(13);					// LineFeed
+						SendDataAll();
 						aa=0;
 						bf=0;
 						break;

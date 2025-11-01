@@ -47,6 +47,7 @@ void DAC8554_SetChan (int chan, int val)
 	val = val - DACchanOffset[chan];
 	PORTD_OUTCLR = (1<<4);			// DAC_SYNC to low
 	_delay_us(5);
+	while(!(SPID_STATUS & SPI_IF_bm));
 	SPID_DATA = 0b00010000 | (chan<<1);
 	while(!(SPID_STATUS & SPI_IF_bm));
 	SPID_DATA = (val >> 8) & 0xFF;
@@ -61,6 +62,7 @@ void DAC8554_PreSetChan (int chan, int val)
 	val = val - DACchanOffset[chan];
 	PORTD_OUTCLR = (1<<4);			// DAC_SYNC to low
 	_delay_us(5);
+	while(!(SPID_STATUS & SPI_IF_bm));
 	SPID_DATA = 0b00000000 | (chan<<1);
 	while(!(SPID_STATUS & SPI_IF_bm));
 	SPID_DATA = (val >> 8) & 0xFF;

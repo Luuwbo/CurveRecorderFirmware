@@ -18,7 +18,7 @@
 #define c_UDDACchan 0			//DAC Kanal für UD soll
 #define c_UG1DACchan 1			//DAC Kanal für UG1 soll
 #define c_UG2DACchan 2			//DAC KANAL für UG2 soll
-#define c_TempDACchan 3			//DAC KANAL für DUT Temperatur soll
+#define c_TempDACchan 3			//DAC KANAL für DUT Temperatur soll oder Heizspannung soll
 
 #define c_UDADCchan 0			//ADC Kanal für UD ist
 #define c_UG1ADCchan 1			//ADC Kanal für UG1 ist
@@ -27,7 +27,7 @@
 #define c_UGv2ADCchan 4
 #define c_URSADCchan 5			//ADC Kanal für US ist
 #define c_USDutADCchan 6		//ADC Kanal für USDUT ist (Innenwiderstand Relais etc)
-#define c_TempDutADCchan 7
+#define c_TempDutADCchan 7		//ADC Kanal für Temp ist oder Heizspannung ist
 
 
 #define c_i32_UDR0MaxAbs_mV 2500		//maximale Ausgangsspannung von UD 
@@ -53,6 +53,7 @@ int32_t i32_UG2;							// Istwert UG in mV
 int32_t i32_UGv2;
 int32_t i32_URS;							// Istwert URS in uV
 int32_t i32_RS;							// Istwert RS in uV
+int32_t i32_US;							// Istwert US in mV
 
 uint8_t ui8_UDVoltageRange;				// Verstärkung des Spannungsbereichs für UD [0,1,2]
 uint8_t ui8_UDVoltageRangeOld;	
@@ -88,5 +89,6 @@ void KsK_SetRegUGmV(int32_t i32_UD);
 void KsK_PulseMeas();
 //void KsK_StatMeas();
 void KsK_SetRelais();
+void SendDataAll();
 
 #endif /* KENNLINIENSCHREIBER_H_ */
