@@ -116,104 +116,214 @@ void KsK_PulseMeas()
 	}
 }
 
-void SendDataAll(){
-	
-	Com_Debug_AddCharToBuffer(122);			//sende z
-	
-	Com_Debug_AddCharToBuffer(100);			// d für UD Anfang
-	Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
-	Com_Debug_AddCharToBuffer(68);			// D für UD Ende
-	
-	Com_Debug_AddCharToBuffer(103);			// UG
-	Com_Debug_AddIntToBuffer(i32_UG1,10);
-	Com_Debug_AddCharToBuffer(71);
-	
-	Com_Debug_AddCharToBuffer(118);			// UG1v
-	Com_Debug_AddIntToBuffer(i32_UGv1,10);
-	Com_Debug_AddCharToBuffer(86);
-	
-	Com_Debug_AddCharToBuffer(115);			// URs
-	Com_Debug_AddIntToBuffer(i32_URS,10);
-	Com_Debug_AddCharToBuffer(83);
-	
-	Com_Debug_AddCharToBuffer(114);			// Rs
+//void SendDataAll(){
+	//
+	//Com_Debug_AddCharToBuffer(122);			//sende z
+	//
+	//Com_Debug_AddCharToBuffer(100);			// d für UD Anfang
+	//Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
+	//Com_Debug_AddCharToBuffer(68);			// D für UD Ende
+	//
+	//Com_Debug_AddCharToBuffer(103);			// UG
+	//Com_Debug_AddIntToBuffer(i32_UG1,10);
+	//Com_Debug_AddCharToBuffer(71);
+	//
+	//Com_Debug_AddCharToBuffer(118);			// UG1v
+	//Com_Debug_AddIntToBuffer(i32_UGv1,10);
+	//Com_Debug_AddCharToBuffer(86);
+	//
+	//Com_Debug_AddCharToBuffer(115);			// URs
+	//Com_Debug_AddIntToBuffer(i32_URS,10);
+	//Com_Debug_AddCharToBuffer(83);
+	//
+	//Com_Debug_AddCharToBuffer(114);			// Rs
+//
+	//switch (ui8_RSRange)
+	//{
+		//case 1:
+		//{
+			//Com_Debug_AddIntToBuffer(10,10);
+			//break;
+		//}
+		//case 2:
+		//{
+			//Com_Debug_AddIntToBuffer(100,10);
+			//break;
+		//}
+		//case 3:
+		//{
+			//Com_Debug_AddIntToBuffer(1000,10);
+			//break;
+		//}
+		//case 4:
+		//{
+			//Com_Debug_AddIntToBuffer(10000,10);
+			//break;
+		//}
+		//case 5:
+		//{
+			//Com_Debug_AddIntToBuffer(100000,10);
+			//break;
+		//}
+		//default:
+		//{
+			//Com_Debug_AddIntToBuffer(10,10);
+		//}
+	//}
+	//Com_Debug_AddCharToBuffer(82);
+	//Com_Debug_AddCharToBuffer(98);
+	//switch (ui8_RGRange)
+	//{
+		//case 0:
+		//{
+			//Com_Debug_AddIntToBuffer(1000000,10);
+			//break;
+		//}
+		//case 1:
+		//{
+			//Com_Debug_AddIntToBuffer(99099,10);
+			//break;
+		//}
+		//case 2:
+		//{
+			//Com_Debug_AddIntToBuffer(9901,10);
+			//break;
+		//}
+		//case 3:
+		//{
+			//Com_Debug_AddIntToBuffer(999,10);
+			//break;
+		//}
+		//case 4:
+		//{
+			//Com_Debug_AddIntToBuffer(100,10);
+			//break;
+		//}
+		//default:
+		//{
+			//Com_Debug_AddIntToBuffer(1000000,10);
+		//}
+	//}
+	//Com_Debug_AddCharToBuffer(66);
+		//
+	//Com_Debug_AddCharToBuffer(116);			// US
+	//Com_Debug_AddIntToBuffer(i32_US,10);
+	//Com_Debug_AddCharToBuffer(84);
+	//
+	//Com_Debug_AddCharToBuffer(10);					// LineFeed
+	//Com_Debug_AddCharToBuffer(13);					// LineFeed
+//}
 
+void SendDataAll(){
+	int8_t b1,b2,b3,b4;
+	int32_t h32;
+	
+	Com_Debug_AddCharToBuffer(1);			//sende z
+	
+	Com_Debug_AddCharToBuffer(2);			// d für UD Anfang
+	//Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
+	h32 = i32_UD; //+1048576
+	b3 = (((h32) >> 12) & 0b00111111) + 32; 
+	b2 = (((h32) >> 6) & 0b00111111) + 32;
+	b1 = (((h32) >> 0) & 0b00111111) + 32;
+	Com_Debug_AddCharToBuffer(b3);
+	Com_Debug_AddCharToBuffer(b2);
+	Com_Debug_AddCharToBuffer(b1);
+	//Com_Debug_AddIntToBuffer(i32_UG1,10);
+	h32 = i32_UG1;
+	b3 = (((h32) >> 12) & 0b00111111) + 32;
+	b2 = (((h32) >> 6) & 0b00111111) + 32;
+	b1 = (((h32) >> 0) & 0b00111111) + 32;
+	Com_Debug_AddCharToBuffer(b3);
+	Com_Debug_AddCharToBuffer(b2);
+	Com_Debug_AddCharToBuffer(b1);
+	//Com_Debug_AddIntToBuffer(i32_UGv1,10);
+	h32 = i32_UGv1;
+	b3 = (((h32) >> 12) & 0b00111111) + 32;
+	b2 = (((h32) >> 6) & 0b00111111) + 32;
+	b1 = (((h32) >> 0) & 0b00111111) + 32;
+	Com_Debug_AddCharToBuffer(b3);
+	Com_Debug_AddCharToBuffer(b2);
+	Com_Debug_AddCharToBuffer(b1);
+	// URS
+	//Com_Debug_AddIntToBuffer(i32_URS,10);
+	h32 = i32_URS;
+	b3 = (((h32) >> 12) & 0b00111111) + 32;
+	b2 = (((h32) >> 6) & 0b00111111) + 32;
+	b1 = (((h32) >> 0) & 0b00111111) + 32;
+	Com_Debug_AddCharToBuffer(b3);
+	Com_Debug_AddCharToBuffer(b2);
+	Com_Debug_AddCharToBuffer(b1);
+	//RS
 	switch (ui8_RSRange)
 	{
 		case 1:
-		{
-			Com_Debug_AddIntToBuffer(10,10);
-			break;
-		}
+		{	h32 = 10;
+			break;	}
 		case 2:
-		{
-			Com_Debug_AddIntToBuffer(100,10);
-			break;
-		}
+		{	h32 = 100;
+			break;	}
 		case 3:
-		{
-			Com_Debug_AddIntToBuffer(1000,10);
-			break;
-		}
+		{	h32 = 1000;
+			break;	}
 		case 4:
-		{
-			Com_Debug_AddIntToBuffer(10000,10);
-			break;
-		}
+		{	h32 = 10000;
+			break;	}
 		case 5:
-		{
-			Com_Debug_AddIntToBuffer(100000,10);
-			break;
-		}
+		{	h32 = 100000;
+			break;	}
 		default:
-		{
-			Com_Debug_AddIntToBuffer(10,10);
-		}
+		{	h32 = 10;	}
 	}
-	Com_Debug_AddCharToBuffer(82);
-	Com_Debug_AddCharToBuffer(98);
+	b3 = (((h32) >> 12) & 0b00111111) + 32;
+	b2 = (((h32) >> 6) & 0b00111111) + 32;
+	b1 = (((h32) >> 0) & 0b00111111) + 32;
+	Com_Debug_AddCharToBuffer(b3);
+	Com_Debug_AddCharToBuffer(b2);
+	Com_Debug_AddCharToBuffer(b1);
+	//RG
 	switch (ui8_RGRange)
 	{
 		case 0:
-		{
-			Com_Debug_AddIntToBuffer(1000000,10);
-			break;
-		}
+		{	h32 = 1000000;
+			break;	}
 		case 1:
-		{
-			Com_Debug_AddIntToBuffer(99099,10);
-			break;
-		}
+		{	h32 = 99099;
+			break;	}
 		case 2:
-		{
-			Com_Debug_AddIntToBuffer(9901,10);
-			break;
-		}
+		{	h32 = 9901;
+			break;	}
 		case 3:
-		{
-			Com_Debug_AddIntToBuffer(999,10);
-			break;
-		}
+		{	h32 = 999;
+			break;	}
 		case 4:
-		{
-			Com_Debug_AddIntToBuffer(100,10);
-			break;
-		}
+		{	h32 = 100;
+			break;	}
 		default:
-		{
-			Com_Debug_AddIntToBuffer(1000000,10);
+		{	h32 = 1000000;
 		}
 	}
-	Com_Debug_AddCharToBuffer(66);
-		
-	Com_Debug_AddCharToBuffer(116);			// US
-	Com_Debug_AddIntToBuffer(i32_US,10);
-	Com_Debug_AddCharToBuffer(84);
+	b4 = (((h32) >> 18) & 0b00111111) + 32;
+	b3 = (((h32) >> 12) & 0b00111111) + 32;
+	b2 = (((h32) >> 6) & 0b00111111) + 32;
+	b1 = (((h32) >> 0) & 0b00111111) + 32;
+	Com_Debug_AddCharToBuffer(b4);
+	Com_Debug_AddCharToBuffer(b3);
+	Com_Debug_AddCharToBuffer(b2);
+	Com_Debug_AddCharToBuffer(b1);
+	//US
+	h32 = i32_US;
+	b3 = (((h32) >> 12) & 0b00111111) + 32;
+	b2 = (((h32) >> 6) & 0b00111111) + 32;
+	b1 = (((h32) >> 0) & 0b00111111) + 32;
+	Com_Debug_AddCharToBuffer(b3);
+	Com_Debug_AddCharToBuffer(b2);
+	Com_Debug_AddCharToBuffer(b1);
+	Com_Debug_AddCharToBuffer(3);
 	
 	Com_Debug_AddCharToBuffer(10);					// LineFeed
 	Com_Debug_AddCharToBuffer(13);					// LineFeed
 }
-
 void KsK_SetRelais() {
 // UGv Relais setzen
 	if (ui8_UGvVoltageRange != ui8_UGvVoltageRangeOld) {
