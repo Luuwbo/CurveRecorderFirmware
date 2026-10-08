@@ -12,12 +12,13 @@
 #define SerOutBufMax 200
 #define SerInBufMax 30
 
-char SerOutBuf[SerOutBufMax+1];
-char SerInBuf[SerInBufMax+1];
-uint8_t SerOutBufHigh;
-uint8_t SerOutBufLow;
-uint8_t SerInBufHigh;
-uint8_t SerInBufLow;
+// volatile: werden in den USART-ISRs (main.c) gelesen/geschrieben, Definition in Com_Debug.c
+extern volatile char SerOutBuf[SerOutBufMax+1];
+extern volatile char SerInBuf[SerInBufMax+1];
+extern volatile uint8_t SerOutBufHigh;
+extern volatile uint8_t SerOutBufLow;
+extern volatile uint8_t SerInBufHigh;
+extern volatile uint8_t SerInBufLow;
 
 void Com_Debug_Init(void);
 void Com_Debug_SendCharFromBuffer (void);					/* sendet Zeichen aus Buffer, muss regelm‰ﬂig aufgerufen werden */

@@ -38,57 +38,60 @@
 #define c_i32_UGr1MaxAbs_mV 25000		//maximale Ausgangsspannung von UGr0
 
 
-uint32_t SystemTime100u;
-int16_t i16_UDKalVal;							//Kalibrierwert für den Offset von Uds in digitwerte des DAC (Diff zu 2^12/2)
-int16_t i16_UGKalVal;
-int32_t i32_UDOutReg;							//Wert, auf den DA-Wandler gesetzt werden soll
-int32_t i32_UGOutReg;
+// Definition der Variablen in KsKernel.c
+extern volatile uint32_t SystemTime100u;			// wird in der Timer-ISR hochgezählt
+extern int16_t i16_UDKalVal;							//Kalibrierwert für den Offset von Uds in digitwerte des DAC (Diff zu 2^12/2)
+extern int16_t i16_UGKalVal;
+extern int32_t i32_UDOutReg;							//Wert, auf den DA-Wandler gesetzt werden soll
+extern int32_t i32_UGOutReg;
 
-int32_t i32_UDs;						// Sollwert UD in mV
-int32_t i32_UGs;						// Sollwert UG in mV
-int32_t i32_UD;							// Istwert UD in mV
-int32_t i32_UG1;							// Istwert UG in mV
-int32_t i32_UGv1;
-int32_t i32_UG2;							// Istwert UG in mV
-int32_t i32_UGv2;
-int32_t i32_URS;							// Istwert URS in uV
-int32_t i32_RS;							// Istwert RS in uV
-int32_t i32_US;							// Istwert US in mV
+extern int32_t i32_UDs;						// Sollwert UD in mV
+extern int32_t i32_UGs;						// Sollwert UG in mV
+extern int32_t i32_UD;							// Istwert UD in mV
+extern int32_t i32_UG1;							// Istwert UG in mV
+extern int32_t i32_UGv1;
+extern int32_t i32_UG2;							// Istwert UG in mV
+extern int32_t i32_UGv2;
+extern int32_t i32_URS;							// Istwert URS in uV
+extern int32_t i32_RS;							// Istwert RS in uV
+extern int32_t i32_US;							// Istwert US in mV
 
-uint8_t ui8_UDVoltageRange;				// Verstärkung des Spannungsbereichs für UD [0,1,2]
-uint8_t ui8_UDVoltageRangeOld;	
-uint8_t ui8_UGvVoltageRange;			// Istwert des Spannungsbereichs für das Gate [0,1]
-uint8_t ui8_UGvVoltageRangeOld;
-uint8_t ui8_UGMeasInputRange;			// Istwert der Messbereichsumschaltung für UG [0,1]
-uint8_t ui8_UGMeasInputRangeOld;
-uint8_t ui8_RGRange;					// eingestellter RG [0,1,2,3,4}	
-uint8_t ui8_RGRangeOld;	
-uint8_t ui8_RSRange;					// eingestellter RG [1,2,3,4}	
-uint8_t ui8_RSRangeOld;
-uint8_t ui8_UGstatic;
-uint8_t ui8_UDstatic;
+extern uint8_t ui8_UDVoltageRange;				// Verstärkung des Spannungsbereichs für UD [0,1,2]
+extern uint8_t ui8_UDVoltageRangeOld;	
+extern uint8_t ui8_UGvVoltageRange;			// Istwert des Spannungsbereichs für das Gate [0,1]
+extern uint8_t ui8_UGvVoltageRangeOld;
+extern uint8_t ui8_UGMeasInputRange;			// Istwert der Messbereichsumschaltung für UG [0,1]
+extern uint8_t ui8_UGMeasInputRangeOld;
+extern uint8_t ui8_RGRange;					// eingestellter RG [0,1,2,3,4}	
+extern uint8_t ui8_RGRangeOld;	
+extern uint8_t ui8_RSRange;					// eingestellter RG [1,2,3,4}	
+extern uint8_t ui8_RSRangeOld;
+extern uint8_t ui8_UGstatic;
+extern uint8_t ui8_UDstatic;
 
-uint8_t ui8_PulsCycle;				// zum auslösen eines Pulses auf 1 setzten
-uint8_t ui8_StatCycle;
-uint8_t ui8_PulsWidth;
-uint8_t ui8_PulsWidthCounter;
-uint8_t ADC_data[20];
+extern uint8_t ui8_PulsCycle;				// zum auslösen eines Pulses auf 1 setzten
+extern uint8_t ui8_StatCycle;
+extern uint8_t ui8_PulsWidth;
+extern uint8_t ui8_PulsWidthCounter;
+extern uint8_t ADC_data[20];
 
-uint8_t DACchanOffset[3];
+extern uint8_t DACchanOffset[4];
 
-uint8_t GA_Rel_Status[2];			// Status der Relaisposoitionen auf 2 GateAmps
-uint8_t IS_Rel_Status;
+extern uint8_t GA_Rel_Status[3];			// Status der Relaisposoitionen auf 2 GateAmps
+extern uint8_t IS_Rel_Status;
 
 
-void KsK_SetUD();
-void KsK_SetRegUDmV(int32_t i32_UD);
+void KsK_SetUD(void);
+void KsK_SetRegUDmV(int32_t i32_Ud);
 //void KsK_SetUDtoZero();
 //void KsK_SetUG();
-void KsK_SetRegUGmV(int32_t i32_UD);
+void KsK_SetRegUGmV(int32_t i32_Ug);
 //void KsK_SetUGtoZero();
-void KsK_PulseMeas();
+void KsK_PulseMeas(void);
 //void KsK_StatMeas();
-void KsK_SetRelais();
-void SendDataAll();
+void KsK_SetRelais(void);
+void SendDataAll(void);
+int32_t KsK_RG_Ohm(uint8_t range);			// Widerstandswert zum RG-Bereich
+int32_t KsK_RS_Ohm(uint8_t range);			// Widerstandswert zum RS-Bereich
 
 #endif /* KENNLINIENSCHREIBER_H_ */

@@ -11,9 +11,11 @@
 
 #define serdelay 2
 
+#include <stdint.h>
+
 void DAC8554_INIT (void);
-void DAC8554_SetChan (int chan, int val);   // einen Kanal mit einem Wert belegen
-void DAC8554_PreSetChan (int chan, int val);
+void DAC8554_SetChan (int chan, int32_t val);   // einen Kanal mit einem Wert belegen
+void DAC8554_PreSetChan (int chan, int32_t val);
 void DAC8554_LoadDataHW(void);
 
 #endif /* DAC8554_H_ */

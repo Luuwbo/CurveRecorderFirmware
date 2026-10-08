@@ -9,6 +9,7 @@
  
  #define CPU_SPEED 32000000
  #define F_CPU 32000000UL
+ #include <util/delay.h>
 
  #include <avr/io.h>
  #include <avr/wdt.h>
@@ -16,12 +17,12 @@
  #include <stdint.h>
 // #include <util/twi.h>
  #include <avr/interrupt.h>
+ #include <util/atomic.h>
  #include <math.h>
  #include <string.h>
  
  // Globale Variablen
  
-// #include "i2cmaster.h"
  #include "Com_Debug.h"
  #include "KennLinienSchreiber.h"
  #include "ADS131.h"
@@ -35,8 +36,6 @@
  void TimerInit (void);
  void InitVariables (void);
 
-
-
  void Loop1000ms (void);
  void Loop100ms (void);
  void Loop10ms (void);
@@ -45,18 +44,19 @@
  void Loopxms (void);
  void Loop100us(void);
  
-uint16_t MainTimer1000ms;
-uint16_t MainTimer100ms;
-uint8_t MainTimerxms;
-uint8_t MainTimer10ms;
-uint8_t MainTimer1ms;
-uint8_t MainTimer100us;
-uint16_t MainTime;
+// volatile: werden in der Timer-ISR hochgezählt
+volatile uint16_t MainTimer1000ms;
+volatile uint16_t MainTimer100ms;
+volatile uint8_t MainTimerxms;
+volatile uint8_t MainTimer10ms;
+volatile uint8_t MainTimer1ms;
+volatile uint8_t MainTimer100us;
+volatile uint16_t MainTime;
 
 char sh[10];
 uint8_t PowerToggleTimer;
 //System
-uint8_t ui8_PulsCycle;				//Statusvariable für Pulsausgabe
+// ui8_PulsCycle: Definition in KsKernel.c
 
 //Test
 
@@ -67,6 +67,7 @@ uint8_t chan = 0;
 
 int main(void)
 {
+	InitVariables();
 	InitIO();
 	InitCPU();
 	
@@ -78,7 +79,14 @@ int main(void)
 
 	Com_Debug_AddStringToBuffer("Start");
 
+	_delay_ms(200);						// ADS131: Power-up-Zeit und Einschwingen der Referenz abwarten
 	ADS131_INIT();
+	if (ADS131_ReadRegister(0x03) != 0b11000000)	// CONFIG3 zur Kontrolle zurücklesen
+	{
+		Com_Debug_AddStringToBuffer(" ADS131 ERR");
+		Com_Debug_AddCharToBuffer(10);
+		Com_Debug_AddCharToBuffer(13);
+	}
 	ADS131_ChanSet(0,0);
 	ADS131_ChanSet(1,0);
 	ADS131_ChanSet(2,0);
@@ -91,39 +99,28 @@ int main(void)
 	DAC8554_INIT();
 	
 	MODULES_INIT();
+	Modules_RS_SET(ui8_RSRange);		// MODULES_INIT setzt alle Relais auf 0, Start-RS (RS min) explizit setzen
 
     while (1) 
     {
-		if (MainTimer100us >= 1)
+		// Prüfen und Herunterzählen jeweils atomar, damit die Timer-ISR
+		// keine Ticks verliert und 16-Bit-Werte nicht halb gelesen werden
+		uint8_t due100us = 0, due1ms = 0, duexms = 0, due10ms = 0, due100ms = 0, due1000ms = 0;
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 		{
-			MainTimer100us = 0;
-			Loop100us();
+			if (MainTimer100us >= 1)		{ MainTimer100us = 0;			due100us = 1; }
+			if (MainTimer1ms >= 10)			{ MainTimer1ms -= 10;			due1ms = 1; }
+			if (MainTimerxms >= 15)			{ MainTimerxms -= 15;			duexms = 1; }
+			if (MainTimer10ms >= 100)		{ MainTimer10ms -= 100;			due10ms = 1; }
+			if (MainTimer100ms >= 1000)		{ MainTimer100ms -= 1000;		due100ms = 1; }
+			if (MainTimer1000ms >= 10000)	{ MainTimer1000ms -= 10000;		due1000ms = 1; }
 		}
-		if (MainTimer1ms >= 10)
-		{
-			MainTimer1ms -= 10;
-			Loop1ms();
-		}
-		if (MainTimerxms >= 15)
-		{
-			MainTimerxms -= 15;
-			Loopxms();
-		}
-		if (MainTimer10ms >= 100)
-		{
-			MainTimer10ms -= 100;
-			Loop10ms();
-		}
-		if (MainTimer100ms >= 1000)
-		{
-			MainTimer100ms -= 1000;
-			Loop100ms();
-		}
-		if (MainTimer1000ms >= 10000)
-		{
-			MainTimer1000ms -= 10000;
-			Loop1000ms();
-		}
+		if (due100us)	{ Loop100us(); }
+		if (due1ms)		{ Loop1ms(); }
+		if (duexms)		{ Loopxms(); }
+		if (due10ms)	{ Loop10ms(); }
+		if (due100ms)	{ Loop100ms(); }
+		if (due1000ms)	{ Loop1000ms(); }
 		Com_Debug_SendCharFromBuffer();
     }
 }
@@ -211,11 +208,8 @@ void InitCPU (void)
 	cli();
 // ------ System Clock set ---------------------------------------------------------------------------------------
 	OSC_CTRL = 0b00000111;					//32kHz & 32MHz Osc on
-	while(OSC_STATUS < 3){ };
-	CPU_CCP = CCP_IOREG_gc;					//protection register
-	//CLK_CTRL = 0b00000001;			//select RC32Mhz
-	asm("LDI R24,0x01");
-	asm("STS 0x0040,R24");
+	while(!(OSC_STATUS & OSC_RC32MRDY_bm)){ };	// warten bis 32MHz RC stabil
+	_PROTECTED_WRITE(CLK_CTRL, CLK_SCLKSEL_RC32M_gc);	// CCP + Schreiben innerhalb 4 Takten, select RC32Mhz
 	
 // ------ USART F0 for USB Com set	------------------------------------------------------------------------------
 	// IO set

@@ -17,6 +17,14 @@
 
 
 
+// begrenzt den DAC-Wert nach Offset-Abzug auf 0..65535 (kein Überlauf in die Gegenpolarität)
+static uint16_t DAC8554_Clamp(int32_t val)
+{
+	if (val < 0) {return 0;}
+	if (val > 65535) {return 65535;}
+	return (uint16_t)val;
+}
+
 void DAC8554_INIT (void)
 {
 	//  Offset der Kanäle definieren
@@ -41,33 +49,33 @@ void DAC8554_INIT (void)
 	_delay_us(10);
 }
 
-void DAC8554_SetChan (int chan, int val)
+void DAC8554_SetChan (int chan, int32_t val)
 // write to buffer and load val
 {
-	val = val - DACchanOffset[chan];
+	uint16_t dacval = DAC8554_Clamp(val - DACchanOffset[chan]);
 	PORTD_OUTCLR = (1<<4);			// DAC_SYNC to low
 	_delay_us(5);
 	while(!(SPID_STATUS & SPI_IF_bm));
 	SPID_DATA = 0b00010000 | (chan<<1);
 	while(!(SPID_STATUS & SPI_IF_bm));
-	SPID_DATA = (val >> 8) & 0xFF;
+	SPID_DATA = (dacval >> 8) & 0xFF;
 	while(!(SPID_STATUS & SPI_IF_bm));
-	SPID_DATA = val & 0xFF;
+	SPID_DATA = dacval & 0xFF;
 	while(!(SPID_STATUS & SPI_IF_bm));
 	PORTD_OUTSET = (1<<4);			// DAC_SYNC to high
 }
-void DAC8554_PreSetChan (int chan, int val)
+void DAC8554_PreSetChan (int chan, int32_t val)
 // write to buffer
 {
-	val = val - DACchanOffset[chan];
+	uint16_t dacval = DAC8554_Clamp(val - DACchanOffset[chan]);
 	PORTD_OUTCLR = (1<<4);			// DAC_SYNC to low
 	_delay_us(5);
 	while(!(SPID_STATUS & SPI_IF_bm));
 	SPID_DATA = 0b00000000 | (chan<<1);
 	while(!(SPID_STATUS & SPI_IF_bm));
-	SPID_DATA = (val >> 8) & 0xFF;
+	SPID_DATA = (dacval >> 8) & 0xFF;
 	while(!(SPID_STATUS & SPI_IF_bm));
-	SPID_DATA = val & 0xFF;
+	SPID_DATA = dacval & 0xFF;
 	while(!(SPID_STATUS & SPI_IF_bm));
 	PORTD_OUTSET = (1<<4);			// DAC_SYNC to high
 }

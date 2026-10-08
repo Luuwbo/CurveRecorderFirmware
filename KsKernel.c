@@ -23,27 +23,78 @@
 #include "DAC8554.h"
 #include "Modules.h"
 
+// globale Variablen (Deklaration als extern in KennLinienSchreiber.h)
+volatile uint32_t SystemTime100u;			// wird in der Timer-ISR hochgezählt
+int16_t i16_UDKalVal;							//Kalibrierwert für den Offset von Uds in digitwerte des DAC (Diff zu 2^12/2)
+int16_t i16_UGKalVal;
+int32_t i32_UDOutReg;							//Wert, auf den DA-Wandler gesetzt werden soll
+int32_t i32_UGOutReg;
 
+int32_t i32_UDs;						// Sollwert UD in mV
+int32_t i32_UGs;						// Sollwert UG in mV
+int32_t i32_UD;							// Istwert UD in mV
+int32_t i32_UG1;							// Istwert UG in mV
+int32_t i32_UGv1;
+int32_t i32_UG2;							// Istwert UG in mV
+int32_t i32_UGv2;
+int32_t i32_URS;							// Istwert URS in uV
+int32_t i32_RS;							// Istwert RS in uV
+int32_t i32_US;							// Istwert US in mV
+
+uint8_t ui8_UDVoltageRange;				// Verstärkung des Spannungsbereichs für UD [0,1,2]
+uint8_t ui8_UDVoltageRangeOld;	
+uint8_t ui8_UGvVoltageRange;			// Istwert des Spannungsbereichs für das Gate [0,1]
+uint8_t ui8_UGvVoltageRangeOld;
+uint8_t ui8_UGMeasInputRange;			// Istwert der Messbereichsumschaltung für UG [0,1]
+uint8_t ui8_UGMeasInputRangeOld;
+uint8_t ui8_RGRange;					// eingestellter RG [0,1,2,3,4}	
+uint8_t ui8_RGRangeOld;	
+uint8_t ui8_RSRange;					// eingestellter RG [1,2,3,4}	
+uint8_t ui8_RSRangeOld;
+uint8_t ui8_UGstatic;
+uint8_t ui8_UDstatic;
+
+uint8_t ui8_PulsCycle;				// zum auslösen eines Pulses auf 1 setzten
+uint8_t ui8_StatCycle;
+uint8_t ui8_PulsWidth;
+uint8_t ui8_PulsWidthCounter;
+uint8_t ADC_data[20];
+
+uint8_t DACchanOffset[4];
+
+uint8_t GA_Rel_Status[3];			// Status der Relaisposoitionen auf 2 GateAmps
+uint8_t IS_Rel_Status;
+
+
+
+// begrenzt einen DAC-Wert auf den gültigen Bereich 0..65535
+static int32_t KsK_ClampDAC(int64_t i64_val)
+{
+	if (i64_val < 0) {return 0;}
+	if (i64_val > 65535) {return 65535;}
+	return (int32_t)i64_val;
+}
 
 void KsK_SetRegUDmV(int32_t i32_Ud)		// skaliert den Sollwert in mV auf den DAC
 {
 	int64_t i64_v1;
-	//UD in bits für 16bit DAC umrechnen
-	i64_v1 = i32_UDs << 15;
+	//UD in bits für 16bit DAC umrechnen, Shift in 64 Bit (sonst Überlauf ab 65,5V)
+	i64_v1 = (int64_t)i32_Ud << 15;
 	if (ui8_UDVoltageRange == 1)
 	{
-		i32_UDOutReg = (i64_v1 / c_i32_UDR1MaxAbs_mV) + 32768;
+		i32_UDOutReg = KsK_ClampDAC((i64_v1 / c_i32_UDR1MaxAbs_mV) + 32768);
 	}
 	if (ui8_UDVoltageRange == 0)
 	{
-		i32_UDOutReg = (i64_v1 / c_i32_UDR0MaxAbs_mV) + 32768;
+		i32_UDOutReg = KsK_ClampDAC((i64_v1 / c_i32_UDR0MaxAbs_mV) + 32768);
 	}
 	if (ui8_UDVoltageRange == 2)
 	{
-		i32_UDOutReg = (i64_v1 / c_i32_UDR2MaxAbs_mV) + 32768;
+		i32_UDOutReg = KsK_ClampDAC((i64_v1 / c_i32_UDR2MaxAbs_mV) + 32768);
 	}
 	
 }
+
 void KsK_SetUD()
 {
 	DAC8554_SetChan(c_UDDACchan,i32_UDOutReg);
@@ -58,16 +109,17 @@ void KsK_SetRegUGmV(int32_t i32_UG)
 {
 	int64_t i64_v1;
 	//UG in bits für 16bit DAC umrechnen
-	i64_v1 = i32_UG << 15;		//
+	i64_v1 = (int64_t)i32_UG << 15;		// Shift in 64 Bit
 	if (ui8_UGvVoltageRange == 0)
 	{
-		i32_UGOutReg = (i64_v1 / c_i32_UGr0MaxAbs_mV) + 32768;
+		i32_UGOutReg = KsK_ClampDAC((i64_v1 / c_i32_UGr0MaxAbs_mV) + 32768);
 	}
 	else
 	{
-		i32_UGOutReg = (i64_v1 / c_i32_UGr1MaxAbs_mV) + 32768;
+		i32_UGOutReg = KsK_ClampDAC((i64_v1 / c_i32_UGr1MaxAbs_mV) + 32768);
 	}
 }
+
 void KsK_SetUG()
 {
 	DAC8554_SetChan(c_UG1DACchan,i32_UGOutReg);
@@ -116,214 +168,58 @@ void KsK_PulseMeas()
 	}
 }
 
-//void SendDataAll(){
-	//
-	//Com_Debug_AddCharToBuffer(122);			//sende z
-	//
-	//Com_Debug_AddCharToBuffer(100);			// d für UD Anfang
-	//Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
-	//Com_Debug_AddCharToBuffer(68);			// D für UD Ende
-	//
-	//Com_Debug_AddCharToBuffer(103);			// UG
-	//Com_Debug_AddIntToBuffer(i32_UG1,10);
-	//Com_Debug_AddCharToBuffer(71);
-	//
-	//Com_Debug_AddCharToBuffer(118);			// UG1v
-	//Com_Debug_AddIntToBuffer(i32_UGv1,10);
-	//Com_Debug_AddCharToBuffer(86);
-	//
-	//Com_Debug_AddCharToBuffer(115);			// URs
-	//Com_Debug_AddIntToBuffer(i32_URS,10);
-	//Com_Debug_AddCharToBuffer(83);
-	//
-	//Com_Debug_AddCharToBuffer(114);			// Rs
-//
-	//switch (ui8_RSRange)
-	//{
-		//case 1:
-		//{
-			//Com_Debug_AddIntToBuffer(10,10);
-			//break;
-		//}
-		//case 2:
-		//{
-			//Com_Debug_AddIntToBuffer(100,10);
-			//break;
-		//}
-		//case 3:
-		//{
-			//Com_Debug_AddIntToBuffer(1000,10);
-			//break;
-		//}
-		//case 4:
-		//{
-			//Com_Debug_AddIntToBuffer(10000,10);
-			//break;
-		//}
-		//case 5:
-		//{
-			//Com_Debug_AddIntToBuffer(100000,10);
-			//break;
-		//}
-		//default:
-		//{
-			//Com_Debug_AddIntToBuffer(10,10);
-		//}
-	//}
-	//Com_Debug_AddCharToBuffer(82);
-	//Com_Debug_AddCharToBuffer(98);
-	//switch (ui8_RGRange)
-	//{
-		//case 0:
-		//{
-			//Com_Debug_AddIntToBuffer(1000000,10);
-			//break;
-		//}
-		//case 1:
-		//{
-			//Com_Debug_AddIntToBuffer(99099,10);
-			//break;
-		//}
-		//case 2:
-		//{
-			//Com_Debug_AddIntToBuffer(9901,10);
-			//break;
-		//}
-		//case 3:
-		//{
-			//Com_Debug_AddIntToBuffer(999,10);
-			//break;
-		//}
-		//case 4:
-		//{
-			//Com_Debug_AddIntToBuffer(100,10);
-			//break;
-		//}
-		//default:
-		//{
-			//Com_Debug_AddIntToBuffer(1000000,10);
-		//}
-	//}
-	//Com_Debug_AddCharToBuffer(66);
-		//
-	//Com_Debug_AddCharToBuffer(116);			// US
-	//Com_Debug_AddIntToBuffer(i32_US,10);
-	//Com_Debug_AddCharToBuffer(84);
-	//
-	//Com_Debug_AddCharToBuffer(10);					// LineFeed
-	//Com_Debug_AddCharToBuffer(13);					// LineFeed
-//}
+// Widerstandswert in Ohm zum RG-Bereich (zentrale Tabelle für SendDataAll und Befehl "b")
+int32_t KsK_RG_Ohm(uint8_t range)
+{
+	switch (range)
+	{
+		case 1:  return 99099;
+		case 2:  return 9901;
+		case 3:  return 999;
+		case 4:  return 100;
+		default: return 1000000;		// auch Bereich 0
+	}
+}
 
-void SendDataAll(){
-	int8_t b1,b2,b3,b4;
-	int32_t h32;
-	
+// Widerstandswert in Ohm zum RS-Bereich (zentrale Tabelle für SendDataAll und Befehl "r")
+int32_t KsK_RS_Ohm(uint8_t range)
+{
+	switch (range)
+	{
+		case 2:  return 100;
+		case 3:  return 1000;
+		case 4:  return 10000;
+		case 5:  return 100000;
+		default: return 10;				// auch Bereich 1
+	}
+}
+
+// sendet einen Wert als n Zeichen zu je 6 Bit (+32 -> druckbares Zeichen), höchstwertige Gruppe zuerst
+static void SendVal6Bit(int32_t h32, uint8_t n)
+{
+	while (n > 0)
+	{
+		n--;
+		Com_Debug_AddCharToBuffer(((h32 >> (6 * n)) & 0b00111111) + 32);
+	}
+}
+
+void SendDataAll(void){
 	Com_Debug_AddCharToBuffer(1);			//sende z
-	
 	Com_Debug_AddCharToBuffer(2);			// d für UD Anfang
-	//Com_Debug_AddIntToBuffer(i32_UD,10);	// Wert
-	h32 = i32_UD; //+1048576
-	b3 = (((h32) >> 12) & 0b00111111) + 32; 
-	b2 = (((h32) >> 6) & 0b00111111) + 32;
-	b1 = (((h32) >> 0) & 0b00111111) + 32;
-	Com_Debug_AddCharToBuffer(b3);
-	Com_Debug_AddCharToBuffer(b2);
-	Com_Debug_AddCharToBuffer(b1);
-	//Com_Debug_AddIntToBuffer(i32_UG1,10);
-	h32 = i32_UG1;
-	b3 = (((h32) >> 12) & 0b00111111) + 32;
-	b2 = (((h32) >> 6) & 0b00111111) + 32;
-	b1 = (((h32) >> 0) & 0b00111111) + 32;
-	Com_Debug_AddCharToBuffer(b3);
-	Com_Debug_AddCharToBuffer(b2);
-	Com_Debug_AddCharToBuffer(b1);
-	//Com_Debug_AddIntToBuffer(i32_UGv1,10);
-	h32 = i32_UGv1;
-	b3 = (((h32) >> 12) & 0b00111111) + 32;
-	b2 = (((h32) >> 6) & 0b00111111) + 32;
-	b1 = (((h32) >> 0) & 0b00111111) + 32;
-	Com_Debug_AddCharToBuffer(b3);
-	Com_Debug_AddCharToBuffer(b2);
-	Com_Debug_AddCharToBuffer(b1);
-	// URS
-	//Com_Debug_AddIntToBuffer(i32_URS,10);
-	h32 = i32_URS;
-	b3 = (((h32) >> 12) & 0b00111111) + 32;
-	b2 = (((h32) >> 6) & 0b00111111) + 32;
-	b1 = (((h32) >> 0) & 0b00111111) + 32;
-	Com_Debug_AddCharToBuffer(b3);
-	Com_Debug_AddCharToBuffer(b2);
-	Com_Debug_AddCharToBuffer(b1);
-	//RS
-	switch (ui8_RSRange)
-	{
-		case 1:
-		{	h32 = 10;
-			break;	}
-		case 2:
-		{	h32 = 100;
-			break;	}
-		case 3:
-		{	h32 = 1000;
-			break;	}
-		case 4:
-		{	h32 = 10000;
-			break;	}
-		case 5:
-		{	h32 = 100000;
-			break;	}
-		default:
-		{	h32 = 10;	}
-	}
-	b3 = (((h32) >> 12) & 0b00111111) + 32;
-	b2 = (((h32) >> 6) & 0b00111111) + 32;
-	b1 = (((h32) >> 0) & 0b00111111) + 32;
-	Com_Debug_AddCharToBuffer(b3);
-	Com_Debug_AddCharToBuffer(b2);
-	Com_Debug_AddCharToBuffer(b1);
-	//RG
-	switch (ui8_RGRange)
-	{
-		case 0:
-		{	h32 = 1000000;
-			break;	}
-		case 1:
-		{	h32 = 99099;
-			break;	}
-		case 2:
-		{	h32 = 9901;
-			break;	}
-		case 3:
-		{	h32 = 999;
-			break;	}
-		case 4:
-		{	h32 = 100;
-			break;	}
-		default:
-		{	h32 = 1000000;
-		}
-	}
-	b4 = (((h32) >> 18) & 0b00111111) + 32;
-	b3 = (((h32) >> 12) & 0b00111111) + 32;
-	b2 = (((h32) >> 6) & 0b00111111) + 32;
-	b1 = (((h32) >> 0) & 0b00111111) + 32;
-	Com_Debug_AddCharToBuffer(b4);
-	Com_Debug_AddCharToBuffer(b3);
-	Com_Debug_AddCharToBuffer(b2);
-	Com_Debug_AddCharToBuffer(b1);
-	//US
-	h32 = i32_US;
-	b3 = (((h32) >> 12) & 0b00111111) + 32;
-	b2 = (((h32) >> 6) & 0b00111111) + 32;
-	b1 = (((h32) >> 0) & 0b00111111) + 32;
-	Com_Debug_AddCharToBuffer(b3);
-	Com_Debug_AddCharToBuffer(b2);
-	Com_Debug_AddCharToBuffer(b1);
+	SendVal6Bit(i32_UD, 3);
+	SendVal6Bit(i32_UG1, 3);
+	SendVal6Bit(i32_UGv1, 3);
+	SendVal6Bit(i32_URS, 3);
+	SendVal6Bit(KsK_RS_Ohm(ui8_RSRange), 3);
+	SendVal6Bit(KsK_RG_Ohm(ui8_RGRange), 4);
+	SendVal6Bit(i32_US, 3);
 	Com_Debug_AddCharToBuffer(3);
 	
 	Com_Debug_AddCharToBuffer(10);					// LineFeed
 	Com_Debug_AddCharToBuffer(13);					// LineFeed
 }
+
 void KsK_SetRelais() {
 // UGv Relais setzen
 	if (ui8_UGvVoltageRange != ui8_UGvVoltageRangeOld) {

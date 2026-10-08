@@ -9,6 +9,13 @@
 #include <avr/interrupt.h>
 #include "Com_Debug.h"
 
+volatile char SerOutBuf[SerOutBufMax+1];
+volatile char SerInBuf[SerInBufMax+1];
+volatile uint8_t SerOutBufHigh;
+volatile uint8_t SerOutBufLow;
+volatile uint8_t SerInBufHigh;
+volatile uint8_t SerInBufLow;
+
 void Com_Debug_Init(void)
 {
 	SerOutBufHigh=0;
@@ -18,12 +25,12 @@ void Com_Debug_Init(void)
 }
 void Com_Debug_AddCharToBuffer (char data)
 {
+	SerOutBuf[SerOutBufHigh] = data;			// erst schreiben, dann Zeiger weiter (sonst 1 Zeichen Versatz)
 	++SerOutBufHigh;
 	if (SerOutBufHigh >= SerOutBufMax)
 	{
 		SerOutBufHigh = 0;
 	}
-	SerOutBuf[SerOutBufHigh] = data;
 }
 void Com_Debug_SendCharFromBuffer (void)
 {	
